@@ -88,5 +88,5 @@ rna_metadata$rna_decon_sampleid <- gsub("_", "", tolower(rna_metadata$rna_decon_
 # Replacing sample IDs with slide ids in rna_data
 colnames(rna_data)[-1] <- rna_metadata$Slide.ID..H.E...Biobank..[match(colnames(rna_data)[-1], rna_metadata$rna_decon_sampleid)]
 
-#g
+#ghf d
 
