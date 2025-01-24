@@ -76,6 +76,17 @@ scale_fill_brewer(type = "qual", palette = "Set1") +
 theme(legend.position = "none") +
 ggtitle("PAM50 Subtype Distribution: Primary vs Metastatic_LRR")
 
+
 ## RNA Deconvolution analysis
+
+rna_data <- read.csv(file.choose())
+rna_metadata <- read.csv(file.choose())
+
+# Reformating rna_metadata to match rna_data
+rna_metadata$rna_decon_sampleid <- gsub("_", "", tolower(rna_metadata$rna_decon_sampleid))
+
+# Replacing sample IDs with slide ids in rna_data
+colnames(rna_data)[-1] <- rna_metadata$Slide.ID..H.E...Biobank..[match(colnames(rna_data)[-1], rna_metadata$rna_decon_sampleid)]
+
 
 
