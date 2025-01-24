@@ -90,7 +90,18 @@ colnames(rna_data)[-1] <- rna_metadata$Slide.ID..H.E...Biobank..[match(colnames(
 
 #Transposing rna_data
 rna_data <- t(rna_data)
+
 # Fixing formatting issues
 colnames(rna_data) <- rna_data[1,]
+rna_data <- as.data.frame(rna_data)
+rna_data <- rna_data[-1,]
+rownames(rna_data) <- gsub("X","",rownames(rna_data))
 
+#Subseting rna_data to only include pairs
 
+rna_data <- subset(rna_data, SlideID %in% paired_metadata_sub$SlideID)
+
+#Subsetting rna_data to focus on one algorithm at a time 
+# CIBERSORT
+rna_data <- rna_data[, grep("_CIBERSORT$", colnames(rna_data))]
+rna_data$SlideID <- rownames(rna_data)
