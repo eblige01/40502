@@ -1,0 +1,72 @@
+### NHS Heatmap Code ##
+#######################
+
+library(gplots)
+
+setwd('/Users/stov25/Box/Sarah_NHS/Figures/Heatmap')
+Sigs_data=as.data.frame(read.table('NHS_Final_Dataset.txt', sep='\t', header=T))
+
+Cols=c("Microarray", "Geparsixto", "cd8_preds", "cd4_preds", "cd20_preds", "cd163_preds", "IHCbasic", "subtype_PAM50_parker")       
+SignaturesOnly=c("Geparsixto", "cd8_preds", "cd4_preds", "cd20_preds", "cd163_preds")
+SignaturesOnly2=c("cd8_preds", "cd4_preds", "cd20_preds", "cd163_preds")
+
+
+Sigs_Subset=Sigs_data[,colnames(Sigs_data) %in% Cols]
+
+PAM50vector=Sigs_Subset$subtype_PAM50_parker
+PAM50vector2=PAM50vector
+PAM50vector2=gsub("Basal", "red", PAM50vector2)
+PAM50vector2=gsub("LumA", "lightblue", PAM50vector2)
+PAM50vector2=gsub("LumB", "blue", PAM50vector2)
+PAM50vector2=gsub("Normal", "green", PAM50vector2)
+PAM50vector2=gsub("Her2", "pink", PAM50vector2)
+
+SubtypeVector=Sigs_Subset$IHCbasic
+SubtypeVector2=SubtypeVector
+SubtypeVector2=gsub("TNBC", "red", SubtypeVector2)
+SubtypeVector2=gsub("HR+", "blue", SubtypeVector2)
+SubtypeVector2=gsub("HER2+", "pink", SubtypeVector2)
+SubtypeVector2=gsub('\\+', "", SubtypeVector2)
+
+
+Sigs_SubsetData=as.matrix(Sigs_Subset[,SignaturesOnly2])
+
+library(gplots)
+
+heatmap.2(Sigs_SubsetData,
+                 Rowv=T,
+                 Colv=F,
+                 dendrogram="row",
+                 scale="column",
+                 breaks = seq(-3, 3, length.out = 300),
+                 col=colorpanel(299, "blue", "white", "red"), 
+                 trace="none", revC=F,
+                 key=TRUE,
+                 keysize = 1,
+                 density.info="none",
+                 key.title = NA,
+                 key.xlab = NULL,
+                 key.ylab = NULL, margins=c(5,5),
+                 RowSideColors=SubtypeVector2, #PAM50vector2
+                 cexRow=NULL, cexCol=0.6)
+dev.off()
+
+heatmap.2(Sigs_SubsetData,
+                 Rowv=T,
+                 Colv=F,
+                 dendrogram="row",
+                 scale="column",
+                 breaks = seq(-2, 2, length.out = 300),
+                 col=colorpanel(299, "blue", "white", "red"), 
+                 trace="none", revC=F,
+                 key=TRUE,
+                 keysize = 1,
+                 density.info="none",
+                 key.title = NA,
+                 key.xlab = NULL,
+                 key.ylab = NULL, margins=c(5,5),
+                 RowSideColors=SubtypeVector2, #PAM50vector2
+                 cexRow=NULL, cexCol=1.5)
+#                 distfun = function(x) as.dist(1-cor(t(x))),
+#                 hclustfun = function(x) hclust(x, method="ward.D2"))
+dev.off()
