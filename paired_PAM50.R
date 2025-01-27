@@ -180,6 +180,9 @@ paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifie
 # sig_rna_results <- results_rna[results_rna$AdjustedPValue < 0.05, ]
 
 # Module analysis
+signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+
+
 
 
 
