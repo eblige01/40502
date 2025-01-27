@@ -8,8 +8,8 @@ library(umap)
 ## PAM50 analysis 
 
 # Loading data
-paired_metadata <- read.csv(file.choose())
-pam50_metadata <- read.delim(file.choose(), header = TRUE)
+paired_metadata <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/paired_metadata_dupadj.csv")
+pam50_metadata <- read.delim("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE)
 
 # Removing NA values from the call column
 pam50_metadata <- pam50_metadata %>% filter(!is.na(Call))
@@ -80,8 +80,8 @@ ggplot(rearranged_data,
 
 ## RNA Deconvolution analysis
 
-rna_data <- read.csv(file.choose())
-rna_metadata <- read.csv(file.choose())
+rna_data <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/rna_decon_matrix_40502.csv")
+rna_metadata <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/all_rna_samples_metadata.csv")
 
 # Reformating rna_metadata to match rna_data
 rna_metadata$rna_decon_sampleid <- gsub("_", "", tolower(rna_metadata$rna_decon_sampleid))
@@ -110,7 +110,7 @@ paired_metadata_sub <- subset(paired_metadata_sub, SlideID %in% rna_data$SlideID
 
 #Subsetting rna_data to focus on one algorithm at a time 
 # CIBERSORT
-rna_data <- rna_data[, grep("_CIBERSORT$", colnames(rna_data))]
+#rna_data <- rna_data[, grep("_CIBERSORT$", colnames(rna_data))]
 
 #Merging rna_data with metadata to ensure order is correct for the UMAP
 rna_data$SlideID <- rownames(rna_data)
@@ -122,8 +122,11 @@ rna_data <- data.frame(lapply(rna_data, function(x) {
   if (is.character(x)) as.numeric(x) else x
 }))
 
+# Normalizing the data
+rna_data_norm <- scale(rna_data)
+
 # Running UMAP
-umap_results <- umap(rna_data)
+umap_results <- umap(rna_data_norm)
 umap_dataframe <- (umap_results$layout)
 colnames(umap_dataframe) <- c("UMAP1", "UMAP2")
 umap_dataframe <- cbind(umap_meta,umap_dataframe)
@@ -132,4 +135,49 @@ ggplot(umap_dataframe, aes(x = UMAP1, y = UMAP2,color = PrimaryMet )) +
   geom_line(aes(group = DeIdentifiedNumber), color = "grey", alpha = 0.5) +
   theme_minimal() +
   labs(title = "UMAP of Cell Type Abundances", x = "UMAP 1", y = "UMAP 2")
+
+# Initialize an empty data frame to store results
+results_rna <- data.frame(
+  CellType = character(),
+  WStatistic = numeric(),
+  PValue = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through each column (cell type) in rna_data
+for (cell_type in colnames(rna_data)) {
+  
+  # Get the cell type data (for current cell type) and corresponding metadata
+  cell_data <- rna_data[, cell_type]  # Data for this cell type (from all samples)
+  tumor_type <- paired_metadata_sub$PrimaryMet   # Tumor type metadata
+  
+  # Ensure the sample order in cell_data matches metadata (in case they're not in the same order)
+  if (length(cell_data) != length(tumor_type)) {
+    stop("Mismatch between number of samples in rna_data and metadata!")
+  }
+  
+  # Perform Mann-Whitney U test (Wilcoxon rank-sum test) for primary vs metastatic groups
+  primary_group <- cell_data[tumor_type == "Primary"]
+  metastatic_group <- cell_data[tumor_type == "Metastatic_LRR"]
+  
+  test_result <- wilcox.test(primary_group, metastatic_group)
+  
+  # Extract test statistic and p-value
+  W_statistic <- test_result$statistic
+  p_value <- test_result$p.value
+  
+  # Add results to the data frame
+  results_rna <- rbind(results_rna, data.frame(
+    CellType = cell_type,
+    WStatistic = W_statistic,
+    PValue = p_value
+  ))
+}
+# Adjust p-values for multiple comparisons using Benjamini-Hochberg method
+results_rna$AdjustedPValue <- p.adjust(results_rna$PValue, method = "BH")
+
+sig_rna_results <- results_rna[results_rna$AdjustedPValue < 0.05, ]
+
+
+
 
