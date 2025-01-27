@@ -4,7 +4,8 @@ library(tidyr)
 library("ggalluvial")
 library(ggplot2)
 library(reshape2)
-## PAM50 anaylsis 
+library(umap)
+## PAM50 analysis 
 
 # Loading data
 paired_metadata <- read.csv(file.choose())
@@ -67,14 +68,14 @@ totals <- rearranged_data %>%
 # Create the plot
 ggplot(rearranged_data,
        aes(axis1 = Primary , axis2 = Metastatic_LRR)) +
-geom_alluvium(aes(fill = Primary), width = 1/6, color = "black",aggregate.y = TRUE) +  # Change flow color based on Metastatic_LRR
-geom_stratum(aes(fill =  after_stat(stratum)), width = 1/6) +
-geom_label(stat = "stratum", aes(label =  after_stat(stratum)), size = 3) +  # Smaller labels
-geom_text(stat = "flow", aes(label = after_stat(count)), nudge_x = 0.2, size = 3) +  # Flow counts
-scale_x_discrete(limits = c("Primary", "Metastatic_LRR"), expand = c(.05, .05)) +
-scale_fill_brewer(type = "qual", palette = "Set1") +
-theme(legend.position = "none") +
-ggtitle("PAM50 Subtype Distribution: Primary vs Metastatic_LRR")
+  geom_alluvium(aes(fill = Primary), width = 1/6, color = "black",aggregate.y = TRUE) +  # Change flow color based on Metastatic_LRR
+  geom_stratum(aes(fill =  after_stat(stratum)), width = 1/6) +
+  geom_label(stat = "stratum", aes(label =  after_stat(stratum)), size = 3) +  # Smaller labels
+  geom_text(stat = "flow", aes(label = after_stat(count)), nudge_x = 0.2, size = 3) +  # Flow counts
+  scale_x_discrete(limits = c("Primary", "Metastatic_LRR"), expand = c(.05, .05)) +
+  scale_fill_brewer(type = "qual", palette = "Set1") +
+  theme(legend.position = "none") +
+  ggtitle("PAM50 Subtype Distribution: Primary vs Metastatic_LRR")
 
 
 ## RNA Deconvolution analysis
@@ -96,12 +97,39 @@ colnames(rna_data) <- rna_data[1,]
 rna_data <- as.data.frame(rna_data)
 rna_data <- rna_data[-1,]
 rownames(rna_data) <- gsub("X","",rownames(rna_data))
-
-#Subseting rna_data to only include pairs
+rna_data$SlideID <- rownames(rna_data)
+#Subseting rna_data to only include pairs and removing pairs that dont have rna data
 
 rna_data <- subset(rna_data, SlideID %in% paired_metadata_sub$SlideID)
+paired_metadata_sub <- subset(paired_metadata_sub, SlideID %in% rna_data$SlideID)
+
+
+
+
+
 
 #Subsetting rna_data to focus on one algorithm at a time 
 # CIBERSORT
 rna_data <- rna_data[, grep("_CIBERSORT$", colnames(rna_data))]
+
+#Merging rna_data with metadata to ensure order is correct for the UMAP
 rna_data$SlideID <- rownames(rna_data)
+umap_meta <- paired_metadata_sub[,c("DeIdentifiedNumber","SlideID","PrimaryMet")]
+rna_data <- merge(umap_meta,rna_data,by = "SlideID")
+# Removing SlideID for UMAP and converting to numeric values (prev char)
+rna_data <- rna_data[, !colnames(rna_data) %in% c("DeIdentifiedNumber","SlideID","PrimaryMet")]
+rna_data <- data.frame(lapply(rna_data, function(x) {
+  if (is.character(x)) as.numeric(x) else x
+}))
+
+# Running UMAP
+umap_results <- umap(rna_data)
+umap_dataframe <- (umap_results$layout)
+colnames(umap_dataframe) <- c("UMAP1", "UMAP2")
+umap_dataframe <- cbind(umap_meta,umap_dataframe)
+ggplot(umap_dataframe, aes(x = UMAP1, y = UMAP2,color = PrimaryMet )) +
+  geom_point(size = 3) +
+  geom_line(aes(group = DeIdentifiedNumber), color = "grey", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "UMAP of Cell Type Abundances", x = "UMAP 1", y = "UMAP 2")
+
