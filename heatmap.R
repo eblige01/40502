@@ -60,7 +60,9 @@ mergeCiber <- mergeCiber[,-1]
 #columnmname1 <- c("B cell memory_CIBERSORT-ABS","T cell CD8+_CIBERSORT-ABS","NK cell activated_CIBERSORT-ABS","Macrophage M0_CIBERSORT-ABS","Call","bc_class","tils")
 columnmname1 <- c(columnname2,"Call","bc_class","tils")
 mergeCiber <- mergeCiber[,colnames(mergeCiber) %in% columnmname1]
-#mergeCiber <- mergeCiber %>% group_by(bc_class)  %>% arrange((bc_class))
+
+# Order by specific feature
+mergeCiber <- mergeCiber %>% group_by(Call)  %>% arrange(Call)
 
 # Formatting for heatmap color bars
 PAM50vector=mergeCiber$Call
@@ -101,7 +103,7 @@ heatmap.2(mergeCiberdata,
           key.ylab = NULL,
           key.xlab = NULL,
           margins = c(5, 8),  # Increased right margin
-          RowSideColors = SubtypeVector2,  # tilsVector2 SubtypeVector2 PAM50vector2
+          RowSideColors = PAM50vector2,  # tilsVector2 SubtypeVector2 PAM50vector2
           cexRow = NULL, cexCol = 1, srtCol = -5, offsetCol = 0.5,adjCol = c(0,1))
 
 
@@ -110,7 +112,7 @@ dev.off()
 heatmap_result <- heatmap.2(mergeCiberdata,
           Rowv=T,
           Colv=F,
-          dendrogram = "row",
+          dendrogram = "none",
           scale="column",
           breaks = seq(-2, 2, length.out = 300),
           col=colorpanel(299, "blue", "white", "red"), 
@@ -121,7 +123,7 @@ heatmap_result <- heatmap.2(mergeCiberdata,
           key.title = NA,
           key.xlab = NA,
           key.ylab = NA, margins=c(5,5),
-          RowSideColors=PAM50vector2, #PAM50vector2
+          RowSideColors=SubtypeVector2, #PAM50vector2
           cexRow=NULL, cexCol=0.75,srtCol = 4,)
 
 
@@ -156,7 +158,7 @@ heatmap_result <- heatmap.2(mergeCiberdata,
                             key.title = NA,
                             key.xlab = NA,
                             key.ylab = NA, margins=c(5,5),
-                            RowSideColors=PAM50vector2, #PAM50vector2
+                            RowSideColors=SubtypeVector2, #PAM50vector2
                             cexRow=NULL, cexCol=0.75,srtCol = 4,)
 
 # Ensure rownames match between cluster_data and mergeCiberdata
