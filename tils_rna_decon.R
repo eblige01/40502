@@ -44,10 +44,10 @@ ncol(rna_seq_df)
 
 rownames(uniqueData) <- uniqueData$rna_decon_sampleid
 
-tuData <- t(rna_seq_df)
+trans_rna_seq_df <- t(rna_seq_df)
 columnname2 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC")
                  
-cibersortdf <- as.data.frame(tuData[,colnames(tuData) %in% columnname2])
+cibersortdf <- as.data.frame(trans_rna_seq_df[,colnames(trans_rna_seq_df) %in% columnname2])
 cibersortdf$rownames <- row.names(cibersortdf)
 uniqueData$rownames <- row.names(uniqueData)
 mergeCiber <- merge(cibersortdf,uniqueData, by="rownames")
