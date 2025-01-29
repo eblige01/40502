@@ -13,11 +13,10 @@ rna_seq_df <- rna_seq_df[,-1]
 
 # Reformating and merging 
 M40502_joined_metadata <- M40502_joined_metadata[!is.na(M40502_joined_metadata$Label.on.Curls),]
-names(M40502_joined_metadata)[4] <- "slideid"
-names(pam50)[1] <- "slideid"
-mergeddata <- merge(D40502_data, M40502_joined_metadata[, c("patid","slideid", "sTILs","rna_decon_sampleid")], by = "patid")
+names(pam50)[1] <- "INVESTIGATOR_SAMPLENAME"
+mergeddata <- merge(D40502_data, M40502_joined_metadata[, c("patid", "sTILs","rna_decon_sampleid","INVESTIGATOR_SAMPLENAME")], by = "patid")
 mergeddata$rna_decon_sampleid <- gsub("Sample_", "sample",mergeddata$rna_decon_sampleid)
-mergeddata <- merge(mergeddata,pam50,by="slideid")
+mergeddata <- merge(mergeddata,pam50,by="INVESTIGATOR_SAMPLENAME")
 mergeddata <- mergeddata[!is.na(mergeddata$sTILs),]
 
 # Removing duplicate paitent IDs by selecting the highest TILS
@@ -37,23 +36,23 @@ uniqueData <- uniqueData %>%
 sampleID <- uniqueData$rna_decon_sampleid
 uniqueData$rna_decon_sampleid <- gsub("Sample_", "sample",sampleID)
 uniqueData$sTILs <- ifelse(uniqueData$sTILs >= 5,"High","Low")
-# Subsetting RNA SEQ to only containing high TILS samples
-
-rna_seq_df <- rna_seq_df[,colnames(rna_seq_df) %in% sampleID]
-ncol(rna_seq_df)
-
-rownames(uniqueData) <- uniqueData$rna_decon_sampleid
-
-trans_rna_seq_df <- t(rna_seq_df)
-columnname2 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC")
-                 
-cibersortdf <- as.data.frame(trans_rna_seq_df[,colnames(trans_rna_seq_df) %in% columnname2])
-cibersortdf$rownames <- row.names(cibersortdf)
-uniqueData$rownames <- row.names(uniqueData)
-mergeCiber <- merge(cibersortdf,uniqueData, by="rownames")
-mergeCiber <- mergeCiber[,-1]
-columnmname1 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC","Call","bc_class","sTILs")
-mergeCiber <- mergeCiber[,colnames(mergeCiber) %in% columnmname1]
+# # Subsetting RNA SEQ to only containing high TILS samples
+# 
+# rna_seq_df <- rna_seq_df[,colnames(rna_seq_df) %in% sampleID]
+# ncol(rna_seq_df)
+# 
+# rownames(uniqueData) <- uniqueData$rna_decon_sampleid
+# 
+# trans_rna_seq_df <- t(rna_seq_df)
+# columnname2 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC")
+#                  
+# cibersortdf <- as.data.frame(trans_rna_seq_df[,colnames(trans_rna_seq_df) %in% columnname2])
+# cibersortdf$rownames <- row.names(cibersortdf)
+# uniqueData$rownames <- row.names(uniqueData)
+# mergeCiber <- merge(cibersortdf,uniqueData, by="rownames")
+# mergeCiber <- mergeCiber[,-1]
+# columnmname1 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC","Call","bc_class","sTILs")
+# mergeCiber <- mergeCiber[,colnames(mergeCiber) %in% columnmname1]
 
 # # Spearman correlation 
 # ## Convert columns to numeric 
@@ -139,4 +138,9 @@ resignature_data <- t(resignature_data)
 # Making first row colnames and making rownames a column 
 colnames(resignature_data) <- resignature_data[1,]
 resignature_data <- resignature_data[-1,]
+resignature_data <- as.data.frame(resignature_data)
 resignature_data$SlideID <- rownames(resignature_data)
+
+# Moving SlideID for to the from for convince
+resignature_data <- resignature_data[, c("SlideID", setdiff(names(resignature_data), "SlideID"))]
+
