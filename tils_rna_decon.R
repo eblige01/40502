@@ -126,4 +126,17 @@ ggplot(mergeCiber, aes(x = sTILs, y = `Macrophage M2_CIBERSORT`)) +
 
 # Module Analysis 
 
+signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
 
+# Reformatting signature data for analysis 
+# Removing unnecessary rows and coloumns
+resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
+resignature_data <- resignature_data %>% slice(-c(1,2))
+
+# Transposing the dataframe
+resignature_data <- t(resignature_data)
+
+# Making first row colnames and making rownames a column 
+colnames(resignature_data) <- resignature_data[1,]
+resignature_data <- resignature_data[-1,]
+resignature_data$SlideID <- rownames(resignature_data)
