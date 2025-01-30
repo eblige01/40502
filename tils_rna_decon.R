@@ -175,16 +175,17 @@ results$p_adj <- p.adjust(results$p_value, method = "BH")
 # Subset significant results after adjustment (e.g., FDR < 0.05)
 significant_results <- results %>% filter(p_adj < 0.05)
 
-gene_to_plot <- "CD103_Ratio_Cancer.Cell.2014_PMID.25446897"
+#Solo testing
+gene_to_plot <- "HALLMARK_PANCREAS_BETA_CELLS"
 
-# Generate violin plot
+# Box plot
 ggplot(resignature_data, aes(x = sTILs, y = !!sym(gene_to_plot), fill = sTILs)) +
   geom_boxplot() +
   geom_jitter(width = 0.2, alpha = 0.5) +  # Add jittered points
-  geom_signif(comparisons = list(c("high", "low")), map_signif_level = TRUE) +  # Significance annotation
+  annotate("text", x = 1.5, y = max(resignature_data[[gene_to_plot]]), label = paste("p = ", format(test_result$p.value, digits = 2)), size = 5) +
   labs(title = paste("Boxplot of", gene_to_plot),
        x = "TIL Group",
        y = "Expression Level") +
   theme_minimal()
-
-test_result <- wilcox.test(resignature_data[["CD103_Ratio_Cancer.Cell.2014_PMID.25446897"]] ~ resignature_data$sTILs)
+#Solo testing
+test_result <- wilcox.test(resignature_data[["HALLMARK_PANCREAS_BETA_CELLS"]] ~ resignature_data$sTILs)
