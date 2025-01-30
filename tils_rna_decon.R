@@ -1,6 +1,9 @@
 library(ggplot2)
 library("gplots")
-library(dplyr)
+library(dplyr)  # Install if not already installed
+library(writexl)
+
+write_xlsx(my_dataframe, "output.xlsx")
 # Loading in the data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -189,8 +192,10 @@ significant_results <- significant_results %>%
                        NA_character_)) %>%
   arrange(desc(!is.na(PMID)), PMID)
 
-#Solo testing indiviudal signatures
-gene_to_plot <- "GSEA_BIOCARTA_ALK_PATHWAY"
+# Saving significant results as a excel file
+write_xlsx(significant_results, "sTILs_gene_signatures.xlsx")
+#Solo testing individual signatures
+gene_to_plot <- "Fibroblasts_MCP_PMID.31942075_PMID.31942077"
 test_result <- wilcox.test(resignature_data[[gene_to_plot]] ~ resignature_data$sTILs)
 # Box plot
 ggplot(resignature_data, aes(x = sTILs, y = !!sym(gene_to_plot), fill = sTILs)) +
