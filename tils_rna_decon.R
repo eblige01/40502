@@ -141,6 +141,9 @@ resignature_data <- resignature_data[-1,]
 resignature_data <- as.data.frame(resignature_data)
 resignature_data$SlideID <- rownames(resignature_data)
 
-# Moving SlideID for to the from for convince
+# Moving SlideID for to the from for convenience 
 resignature_data <- resignature_data[, c("SlideID", setdiff(names(resignature_data), "SlideID"))]
+
+# Reformatting and merging 
+
 
