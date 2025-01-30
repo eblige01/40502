@@ -1,8 +1,6 @@
 library(ggplot2)
 library("gplots")
 library(dplyr)
-install.packages("ggsignif")  # Install ggsignif package
-library(ggsignif)  # Load ggsignif package
 # Loading in the data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -154,7 +152,7 @@ resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^
 resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
 
 # Initialize an empty dataframe to store results
-results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE)
+results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
 
 # Get the gene column names (excluding sample_id and TIL_group)
 gene_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs"))
@@ -166,8 +164,17 @@ for (gene in gene_cols) {
   # Perform Wilcoxon test (Mann-Whitney U test)
   test_result <- wilcox.test(resignature_data[[gene]] ~ resignature_data$sTILs)
   
+  # Calculate mean expression for each group will be used to determine the dirrection of sig results
+  group_means <- resignature_data %>%
+    group_by(sTILs) %>%
+    summarise(mean_expression = mean(!!sym(gene), na.rm = TRUE)) %>%
+    arrange(desc(mean_expression))
+  
+  # Determine which group has higher expression
+  higher_group <- group_means$sTILs[1]
+  
   # Append results to dataframe
-  results <- rbind(results, data.frame(Gene = gene, p_value = test_result$p.value))
+  results <- rbind(results, data.frame(Gene = gene, p_value = test_result$p.value,higher_expression = higher_group))
 }
 
 results$p_adj <- p.adjust(results$p_value, method = "BH")
@@ -175,9 +182,16 @@ results$p_adj <- p.adjust(results$p_value, method = "BH")
 # Subset significant results after adjustment (e.g., FDR < 0.05)
 significant_results <- results %>% filter(p_adj < 0.05)
 
-#Solo testing
-gene_to_plot <- "HALLMARK_PANCREAS_BETA_CELLS"
+#Reordering significant results 
+significant_results <- significant_results %>%
+  mutate(PMID = ifelse(grepl("_PMID\\.\\d+$", Gene), 
+                       sub(".*_PMID\\.", "", Gene), 
+                       NA_character_)) %>%
+  arrange(desc(!is.na(PMID)), PMID)
 
+#Solo testing indiviudal signatures
+gene_to_plot <- "GSEA_BIOCARTA_ALK_PATHWAY"
+test_result <- wilcox.test(resignature_data[[gene_to_plot]] ~ resignature_data$sTILs)
 # Box plot
 ggplot(resignature_data, aes(x = sTILs, y = !!sym(gene_to_plot), fill = sTILs)) +
   geom_boxplot() +
@@ -187,5 +201,3 @@ ggplot(resignature_data, aes(x = sTILs, y = !!sym(gene_to_plot), fill = sTILs)) 
        x = "TIL Group",
        y = "Expression Level") +
   theme_minimal()
-#Solo testing
-test_result <- wilcox.test(resignature_data[["HALLMARK_PANCREAS_BETA_CELLS"]] ~ resignature_data$sTILs)
