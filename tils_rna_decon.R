@@ -1,6 +1,8 @@
 library(ggplot2)
 library("gplots")
 library(dplyr)
+install.packages("ggsignif")  # Install ggsignif package
+library(ggsignif)  # Load ggsignif package
 # Loading in the data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -36,6 +38,8 @@ uniqueData <- uniqueData %>%
 sampleID <- uniqueData$rna_decon_sampleid
 uniqueData$rna_decon_sampleid <- gsub("Sample_", "sample",sampleID)
 uniqueData$sTILs <- ifelse(uniqueData$sTILs >= 5,"High","Low")
+# RNA SEQ analysis
+
 # # Subsetting RNA SEQ to only containing high TILS samples
 # 
 # rna_seq_df <- rna_seq_df[,colnames(rna_seq_df) %in% sampleID]
@@ -91,37 +95,37 @@ uniqueData$sTILs <- ifelse(uniqueData$sTILs >= 5,"High","Low")
 #   theme(axis.title.x=element_blank(), axis.text.x = element_text(angle = 65, hjust = 1,size =7.5),panel.grid.major = element_blank(),panel.grid.minor = element_blank())  # Rotate x-axis labels for better readability
 
 # Making box plot with colored dots
-mergeCiber$sTILs <- as.factor(mergeCiber$sTILs)
-mergeCiber$`T cell CD8+_CIBERSORT` <- as.numeric(mergeCiber$`T cell CD8+_CIBERSORT`)
-
-ggplot(mergeCiber, aes(x = sTILs, y = `T cell CD8+_CIBERSORT`)) +
-  geom_boxplot(fill = "black", color = "black", outlier.shape = NA) +  # Black boxes
-  geom_jitter(aes(color = factor(Call)), width = 0.2, size = 2) +   # Colored dots for subtypes
-  labs(title = "TILs Levels by Subtype",
-       x = "TILs Group",
-       y = "T cell CD8+_CIBERSORT") +
-  scale_color_manual(values = c("red", "pink", "lightblue", "blue", "green")) +  # Assign colors to subtypes
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12),  # Customize x-axis label size
-        axis.text.y = element_text(size = 12),
-        legend.title = element_text(size = 12),
-        legend.text = element_text(size = 10)) 
-
-# making violin plot
-mergeCiber$`Macrophage M2_CIBERSORT` <- as.numeric(mergeCiber$`Macrophage M2_CIBERSORT`)
-ggplot(mergeCiber, aes(x = sTILs, y = `Macrophage M2_CIBERSORT`)) +
-  geom_violin(fill = "black", color = "black") +  # Create black violin shapes
-  geom_jitter(aes(color = factor(Call)), width = 0.2, size = 1) +   # Colored dots for subtypes
-  labs(color = "PAM50 subtype",
-       x = "TILs Group",
-       y = "Macrophage M2_CIBERSORT") +
-  scale_color_manual(values = c("red", "pink", "lightblue", "blue", "green")) +  # Assign colors to subtypes
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 12),  # Customize x-axis label size
-        axis.text.y = element_text(size = 12),
-        legend.title = element_text(size = 12),
-        legend.text = element_text(size = 10)) +
-  scale_y_continuous(labels = scales::number_format(accuracy = 0.01))
+# mergeCiber$sTILs <- as.factor(mergeCiber$sTILs)
+# mergeCiber$`T cell CD8+_CIBERSORT` <- as.numeric(mergeCiber$`T cell CD8+_CIBERSORT`)
+# 
+# ggplot(mergeCiber, aes(x = sTILs, y = `T cell CD8+_CIBERSORT`)) +
+#   geom_boxplot(fill = "black", color = "black", outlier.shape = NA) +  # Black boxes
+#   geom_jitter(aes(color = factor(Call)), width = 0.2, size = 2) +   # Colored dots for subtypes
+#   labs(title = "TILs Levels by Subtype",
+#        x = "TILs Group",
+#        y = "T cell CD8+_CIBERSORT") +
+#   scale_color_manual(values = c("red", "pink", "lightblue", "blue", "green")) +  # Assign colors to subtypes
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(size = 12),  # Customize x-axis label size
+#         axis.text.y = element_text(size = 12),
+#         legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 10)) 
+# 
+# # making violin plot
+# mergeCiber$`Macrophage M2_CIBERSORT` <- as.numeric(mergeCiber$`Macrophage M2_CIBERSORT`)
+# ggplot(mergeCiber, aes(x = sTILs, y = `Macrophage M2_CIBERSORT`)) +
+#   geom_violin(fill = "black", color = "black") +  # Create black violin shapes
+#   geom_jitter(aes(color = factor(Call)), width = 0.2, size = 1) +   # Colored dots for subtypes
+#   labs(color = "PAM50 subtype",
+#        x = "TILs Group",
+#        y = "Macrophage M2_CIBERSORT") +
+#   scale_color_manual(values = c("red", "pink", "lightblue", "blue", "green")) +  # Assign colors to subtypes
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(size = 12),  # Customize x-axis label size
+#         axis.text.y = element_text(size = 12),
+#         legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 10)) +
+#   scale_y_continuous(labels = scales::number_format(accuracy = 0.01))
 
 # Module Analysis 
 
@@ -139,11 +143,48 @@ resignature_data <- t(resignature_data)
 colnames(resignature_data) <- resignature_data[1,]
 resignature_data <- resignature_data[-1,]
 resignature_data <- as.data.frame(resignature_data)
-resignature_data$SlideID <- rownames(resignature_data)
+resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
 
-# Moving SlideID for to the from for convenience 
-resignature_data <- resignature_data[, c("SlideID", setdiff(names(resignature_data), "SlideID"))]
+# Moving INVESTIGATOR_SAMPLENAME for to the from for convenience 
+resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
 
 # Reformatting and merging 
+resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
 
+resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
 
+# Initialize an empty dataframe to store results
+results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE)
+
+# Get the gene column names (excluding sample_id and TIL_group)
+gene_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs"))
+
+# Loop through each gene column
+for (gene in gene_cols) {
+  # Ensure the column is numeric
+  resignature_data[[gene]] <- as.numeric(resignature_data[[gene]])
+  # Perform Wilcoxon test (Mann-Whitney U test)
+  test_result <- wilcox.test(resignature_data[[gene]] ~ resignature_data$sTILs)
+  
+  # Append results to dataframe
+  results <- rbind(results, data.frame(Gene = gene, p_value = test_result$p.value))
+}
+
+results$p_adj <- p.adjust(results$p_value, method = "BH")
+
+# Subset significant results after adjustment (e.g., FDR < 0.05)
+significant_results <- results %>% filter(p_adj < 0.05)
+
+gene_to_plot <- "CD103_Ratio_Cancer.Cell.2014_PMID.25446897"
+
+# Generate violin plot
+ggplot(resignature_data, aes(x = sTILs, y = !!sym(gene_to_plot), fill = sTILs)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.5) +  # Add jittered points
+  geom_signif(comparisons = list(c("high", "low")), map_signif_level = TRUE) +  # Significance annotation
+  labs(title = paste("Boxplot of", gene_to_plot),
+       x = "TIL Group",
+       y = "Expression Level") +
+  theme_minimal()
+
+test_result <- wilcox.test(resignature_data[["CD103_Ratio_Cancer.Cell.2014_PMID.25446897"]] ~ resignature_data$sTILs)
