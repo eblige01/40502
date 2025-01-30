@@ -3,7 +3,7 @@ library("gplots")
 library(dplyr)  # Install if not already installed
 library(writexl)
 
-write_xlsx(my_dataframe, "output.xlsx")
+
 # Loading in the data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -41,23 +41,14 @@ uniqueData$rna_decon_sampleid <- gsub("Sample_", "sample",sampleID)
 uniqueData$sTILs <- ifelse(uniqueData$sTILs >= 5,"High","Low")
 # RNA SEQ analysis
 
-# # Subsetting RNA SEQ to only containing high TILS samples
-# 
-# rna_seq_df <- rna_seq_df[,colnames(rna_seq_df) %in% sampleID]
-# ncol(rna_seq_df)
-# 
-# rownames(uniqueData) <- uniqueData$rna_decon_sampleid
-# 
-# trans_rna_seq_df <- t(rna_seq_df)
-# columnname2 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC")
-#                  
-# cibersortdf <- as.data.frame(trans_rna_seq_df[,colnames(trans_rna_seq_df) %in% columnname2])
-# cibersortdf$rownames <- row.names(cibersortdf)
-# uniqueData$rownames <- row.names(uniqueData)
-# mergeCiber <- merge(cibersortdf,uniqueData, by="rownames")
-# mergeCiber <- mergeCiber[,-1]
-# columnmname1 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M2_CIBERSORT","B cell_QUANTISEQ","Macrophage M1_QUANTISEQ","Macrophage M2_QUANTISEQ","NK cell_QUANTISEQ","T cell CD8+_QUANTISEQ","B cell_EPIC","T cell CD8+_EPIC","Macrophage_EPIC","Call","bc_class","sTILs")
-# mergeCiber <- mergeCiber[,colnames(mergeCiber) %in% columnmname1]
+# Subsetting RNA SEQ to only containing high TILS samples
+
+rna_seq_df <- rna_seq_df[,colnames(rna_seq_df) %in% sampleID]
+ncol(rna_seq_df)
+
+rownames(uniqueData) <- uniqueData$rna_decon_sampleid
+
+trans_rna_seq_df <- t(rna_seq_df)
 
 # # Spearman correlation 
 # ## Convert columns to numeric 
