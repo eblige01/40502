@@ -52,9 +52,10 @@ rownames(uniqueData) <- uniqueData$rna_decon_sampleid
 trans_rna_seq_df <- as.data.frame(t(rna_seq_df))
 
 trans_rna_seq_df$rna_decon_sampleid <- row.names(trans_rna_seq_df)
-  
-trans_rna_seq_df <- merge(trans_rna_seq_df, uniqueData[, c("rna_decon_sampleid", "sTILs")], by = "rna_decon_sampleid")
 
+trans_rna_seq_df <- merge(trans_rna_seq_df, uniqueData[, c("rna_decon_sampleid", "sTILs")], by = "rna_decon_sampleid")
+row.names(trans_rna_seq_df) <- trans_rna_seq_df$rna_decon_sampleid
+trans_rna_seq_df <- trans_rna_seq_df %>% select (-"rna_decon_sampleid")
 # Looping and testing each cell type for each estimate
 
 # Initialize an empty dataframe to store module_module_results
@@ -69,16 +70,16 @@ for (cell in cell_cols) {
   trans_rna_seq_df[[cell]] <- as.numeric(trans_rna_seq_df[[cell]])
   # Perform Wilcoxon test (Mann-Whitney U test)
   test_result <- wilcox.test(trans_rna_seq_df[[cell]] ~ trans_rna_seq_df$sTILs)
-  
+
   # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
   group_means <- trans_rna_seq_df %>%
     group_by(sTILs) %>%
     summarise(mean_expression = mean(!!sym(cell), na.rm = TRUE)) %>%
     arrange(desc(mean_expression))
-  
+
   # Determine which group has higher expression
   higher_group <- group_means$sTILs[1]
-  
+
   # Append module_results to dataframe
   rna_results <- rbind(rna_results, data.frame(Cell = cell, p_value = test_result$p.value,higher_expression = higher_group))
 }
@@ -87,6 +88,8 @@ rna_results$p_adj <- p.adjust(rna_results$p_value, method = "bonferroni")
 
 # Subset significant module_results after adjustment (e.g., FDR < 0.05)
 significant_rna_results <- rna_results %>% filter(p_adj < 0.05)
+sig_cells <- significant_rna_results$Cell
+
 
 # # Spearman correlation 
 # ## Convert columns to numeric 
