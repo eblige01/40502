@@ -48,7 +48,45 @@ ncol(rna_seq_df)
 
 rownames(uniqueData) <- uniqueData$rna_decon_sampleid
 
-trans_rna_seq_df <- t(rna_seq_df)
+# Reformatting and merging
+trans_rna_seq_df <- as.data.frame(t(rna_seq_df))
+
+trans_rna_seq_df$rna_decon_sampleid <- row.names(trans_rna_seq_df)
+  
+trans_rna_seq_df <- merge(trans_rna_seq_df, uniqueData[, c("rna_decon_sampleid", "sTILs")], by = "rna_decon_sampleid")
+
+# Looping and testing each cell type for each estimate
+
+# Initialize an empty dataframe to store module_module_results
+rna_results <- data.frame(Cell = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
+
+# Get the gene column names (excluding sample_id and TIL_group)
+cell_cols <- setdiff(names(trans_rna_seq_df), c("rna_decon_sampleid", "sTILs"))
+
+# Loop through each gene column
+for (cell in cell_cols) {
+  # Ensure the column is numeric
+  trans_rna_seq_df[[cell]] <- as.numeric(trans_rna_seq_df[[cell]])
+  # Perform Wilcoxon test (Mann-Whitney U test)
+  test_result <- wilcox.test(trans_rna_seq_df[[cell]] ~ trans_rna_seq_df$sTILs)
+  
+  # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
+  group_means <- trans_rna_seq_df %>%
+    group_by(sTILs) %>%
+    summarise(mean_expression = mean(!!sym(cell), na.rm = TRUE)) %>%
+    arrange(desc(mean_expression))
+  
+  # Determine which group has higher expression
+  higher_group <- group_means$sTILs[1]
+  
+  # Append module_results to dataframe
+  rna_results <- rbind(rna_results, data.frame(Cell = cell, p_value = test_result$p.value,higher_expression = higher_group))
+}
+
+rna_results$p_adj <- p.adjust(rna_results$p_value, method = "bonferroni")
+
+# Subset significant module_results after adjustment (e.g., FDR < 0.05)
+significant_rna_results <- rna_results %>% filter(p_adj < 0.05)
 
 # # Spearman correlation 
 # ## Convert columns to numeric 
@@ -145,8 +183,8 @@ resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^
 
 resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
 
-# Initialize an empty dataframe to store results
-results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
+# Initialize an empty dataframe to store module_module_results
+module_results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
 
 # Get the gene column names (excluding sample_id and TIL_group)
 gene_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs"))
@@ -158,7 +196,7 @@ for (gene in gene_cols) {
   # Perform Wilcoxon test (Mann-Whitney U test)
   test_result <- wilcox.test(resignature_data[[gene]] ~ resignature_data$sTILs)
   
-  # Calculate mean expression for each group will be used to determine the dirrection of sig results
+  # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
   group_means <- resignature_data %>%
     group_by(sTILs) %>%
     summarise(mean_expression = mean(!!sym(gene), na.rm = TRUE)) %>%
@@ -167,24 +205,24 @@ for (gene in gene_cols) {
   # Determine which group has higher expression
   higher_group <- group_means$sTILs[1]
   
-  # Append results to dataframe
-  results <- rbind(results, data.frame(Gene = gene, p_value = test_result$p.value,higher_expression = higher_group))
+  # Append module_results to dataframe
+  module_results <- rbind(module_results, data.frame(Gene = gene, p_value = test_result$p.value,higher_expression = higher_group))
 }
 
-results$p_adj <- p.adjust(results$p_value, method = "BH")
+module_results$p_adj <- p.adjust(module_results$p_value, method = "BH")
 
-# Subset significant results after adjustment (e.g., FDR < 0.05)
-significant_results <- results %>% filter(p_adj < 0.05)
+# Subset significant module_results after adjustment (e.g., FDR < 0.05)
+significant_module_results <- module_results %>% filter(p_adj < 0.05)
 
-#Reordering significant results 
-significant_results <- significant_results %>%
+#Reordering significant module_results 
+significant_module_results <- significant_module_results %>%
   mutate(PMID = ifelse(grepl("_PMID\\.\\d+$", Gene), 
                        sub(".*_PMID\\.", "", Gene), 
                        NA_character_)) %>%
   arrange(desc(!is.na(PMID)), PMID)
 
-# Saving significant results as a excel file
-write_xlsx(significant_results, "sTILs_gene_signatures.xlsx")
+# Saving significant module_results as a excel file
+write_xlsx(significant_module_results, "sTILs_gene_signatures.xlsx")
 #Solo testing individual signatures
 gene_to_plot <- "Fibroblasts_MCP_PMID.31942075_PMID.31942077"
 test_result <- wilcox.test(resignature_data[[gene_to_plot]] ~ resignature_data$sTILs)
