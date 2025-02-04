@@ -9,10 +9,6 @@ library(umap)
 
 # Loading data
 paired_metadata <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/paired_metadata_dupadj.csv")
-pam50_metadata <- read.delim("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE)
-
-# Removing NA values from the call column
-pam50_metadata <- pam50_metadata %>% filter(!is.na(Call))
 
 
 # Removing any rows with exclude = Yes
@@ -25,6 +21,12 @@ paired_metadata_sub <- subset(paired_metadata, DeIdentifiedNumber %in% duplicate
 
 # Rearrange the table so duplicates are together
 paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifiedNumber), ]
+
+### PAM50 Anaylsis
+# pam50_metadata <- read.delim("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE)
+
+# Removing NA values from the call column
+# pam50_metadata <- pam50_metadata %>% filter(!is.na(Call))
 
 # #Formatting PAM50 data before the merge
 # pam50_metadata$X <- gsub("_C$", "", pam50_metadata$X)
@@ -79,7 +81,7 @@ paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifie
 
 
 
-# ## RNA Deconvolution analysis
+### RNA Deconvolution analysis
 # 
 # rna_data <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/rna_decon_matrix_40502.csv")
 # rna_metadata <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/all_rna_samples_metadata.csv")
@@ -180,10 +182,34 @@ paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifie
 # sig_rna_results <- results_rna[results_rna$AdjustedPValue < 0.05, ]
 
 # Module analysis
+M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
 signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+# Reformatting signature data for analysis 
+# Removing unnecessary rows and coloumns
+resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
+resignature_data <- resignature_data %>% slice(-c(1,2))
 
+# Transposing the dataframe
+resignature_data <- t(resignature_data)
 
+# Making first row colnames and making rownames a column 
+colnames(resignature_data) <- resignature_data[1,]
+resignature_data <- resignature_data[-1,]
+resignature_data <- as.data.frame(resignature_data)
+resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
 
+# Moving INVESTIGATOR_SAMPLENAME for to the from for convenience 
+resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
 
+# Removing leading X for formatting  
+resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
 
+# Removing SlideIDs not found in the metadata
+resignature_data <- resignature_data %>% 
+  filter(INVESTIGATOR_SAMPLENAME %in% M40502_joined_metadata$INVESTIGATOR_SAMPLENAME)
 
+# Merging with metadata for the SlideID
+resignature_data <- merge(resignature_data, M40502_joined_metadata[, c("INVESTIGATOR_SAMPLENAME", "Slide.ID..H.E...Biobank..")], by = "INVESTIGATOR_SAMPLENAME")
+colnames(resignature_data)[colnames(resignature_data) == "Slide.ID..H.E...Biobank.."] <- "SlideID"
+# Merging paired data and module data
+paired_data <- merge(resignature_data, paired_metadata_sub[, c("SlideID", "PrimaryMet")], by = "SlideID")
