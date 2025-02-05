@@ -213,3 +213,42 @@ resignature_data <- merge(resignature_data, M40502_joined_metadata[, c("INVESTIG
 colnames(resignature_data)[colnames(resignature_data) == "Slide.ID..H.E...Biobank.."] <- "SlideID"
 # Merging paired data and module data
 paired_data <- merge(resignature_data, paired_metadata_sub[, c("SlideID", "PrimaryMet")], by = "SlideID")
+
+module_results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
+
+# Get the gene column names (excluding sample_id and TIL_group)
+gene_cols <- setdiff(names(paired_data), c("INVESTIGATOR_SAMPLENAME", "PrimaryMet"))
+
+# Loop through each gene column
+for (gene in gene_cols) {
+  # Ensure the column is numeric
+  paired_data[[gene]] <- as.numeric(paired_data[[gene]])
+  # Perform Wilcoxon test (Mann-Whitney U test)
+  test_result <- wilcox.test(paired_data[[gene]] ~ paired_data$PrimaryMet)
+
+  # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
+  group_means <- paired_data %>%
+    group_by(PrimaryMet) %>%
+    summarise(mean_expression = mean(!!sym(gene), na.rm = TRUE)) %>%
+    arrange(desc(mean_expression))
+
+  # Determine which group has higher expression
+  higher_group <- group_means$PrimaryMet[1]
+
+  # Append module_results to dataframe
+  module_results <- rbind(module_results, data.frame(Gene = gene, p_value = test_result$p.value,higher_expression = higher_group))
+}
+
+module_results$p_adj <- p.adjust(module_results$p_value, method = "BH")
+
+# Subset significant module_results after adjustment (e.g., FDR < 0.05)
+significant_module_results <- module_results %>% filter(p_adj < 0.05)
+
+#Reordering significant module_results
+significant_module_results <- significant_module_results %>%
+  mutate(PMID = ifelse(grepl("_PMID\\.\\d+$", Gene),
+                       sub(".*_PMID\\.", "", Gene),
+                       NA_character_)) %>%
+  arrange(desc(!is.na(PMID)), PMID)
+
+write_xlsx(significant_module_results, "Paired_gene_signatures.xlsx")
