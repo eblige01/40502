@@ -51,3 +51,61 @@ mergeddata_tils_sub$sTILs_cat <- ifelse(mergeddata_tils_sub$sTILs >= 5,"High","L
 ### Subsetting duplicate RNA seq sample IDs 
 unique_PAM <- mergeddata %>%
   distinct(rna_decon_sampleid, .keep_all = TRUE)
+
+# Reformatting and merging
+trans_rna_seq_df <- as.data.frame(t(rna_seq_df))
+
+trans_rna_seq_df$rna_decon_sampleid <- row.names(trans_rna_seq_df)
+
+# Change this line for other analysis TILS/PAM50
+trans_rna_seq_df <- merge(trans_rna_seq_df, unique_PAM[, c("rna_decon_sampleid", "Call")], by = "rna_decon_sampleid")
+row.names(trans_rna_seq_df) <- trans_rna_seq_df$rna_decon_sampleid
+trans_rna_seq_df <- trans_rna_seq_df %>% select (-"rna_decon_sampleid")
+
+# Empty data frame for results
+PAM50_results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE, significant_pairs = character())
+
+# Get the gene column names (excluding sample_id and Call)
+gene_cols <- setdiff(names(trans_rna_seq_df), c("rna_decon_sampleid", "Call"))
+
+# Loop through each gene column
+for (gene in gene_cols) {
+  # Ensure the column is numeric
+  trans_rna_seq_df[[gene]] <- as.numeric(trans_rna_seq_df[[gene]])
+
+  # Perform Kruskal-Wallis test
+  test_result <- kruskal.test(trans_rna_seq_df[[gene]] ~ trans_rna_seq_df$Call)
+
+  # If Kruskal-Wallis test is significant, perform Dunn's test
+  significant_pairs <- NA_character_
+  if (test_result$p.value < 0.05) {
+    dunn_result <- dunnTest(trans_rna_seq_df[[gene]] ~ trans_rna_seq_df$Call, method = "bh")
+
+    # Check column names and extract significant pairwise comparisons
+    if ("Comparison" %in% colnames(dunn_result$res) & "P.adj" %in% colnames(dunn_result$res)) {
+      sig_pairs <- dunn_result$res %>%
+        filter(P.adj < 0.05) %>%
+        pull(Comparison)  # Extract significant pair names
+
+      # Store significant comparisons as a comma-separated string
+      if (length(sig_pairs) > 0) {
+        significant_pairs <- paste(sig_pairs, collapse = ", ")
+      }
+    }
+  }
+
+  # Append results to module_results dataframe
+  PAM50_results <- rbind(PAM50_results,
+                          data.frame(Gene = gene,
+                                     p_value = test_result$p.value,
+                                     significant_pairs = significant_pairs))
+}
+
+# Adjust p-values
+PAM50_results$p_adj <- p.adjust(PAM50_results$p_value, method = "bonferroni")
+
+# Subset significant module_results after adjustment (e.g., FDR < 0.05)
+PAM50_results_sig <-PAM50_results %>% filter(p_adj < 0.05)
+#Saving results
+ write_xlsx(PAM50_results_sig, "PAM50_decon.xlsx")
+
