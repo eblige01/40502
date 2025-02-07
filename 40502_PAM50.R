@@ -1,6 +1,6 @@
 # 40502 PAM50 analysis
 library(ggplot2)
-library("gplots")
+library(gplots)
 library(dplyr)  
 library(writexl)
 library(FSA) 
@@ -24,8 +24,7 @@ mergeddata$rna_decon_sampleid <- gsub("Sample_", "sample",mergeddata$rna_decon_s
 mergeddata <- merge(mergeddata,pam50,by="INVESTIGATOR_SAMPLENAME")
 mergeddata_tils_sub <- mergeddata[!is.na(mergeddata$sTILs),]
 mergeddata_tils_sub$sTILs_cat <- ifelse(mergeddata_tils_sub$sTILs >= 5,"High","Low")
-### Removing duplicate rows
-mergeddata <- distinct(mergeddata)
+
 # ## Chi-Squared analysis TILS vs PAM50
 # 
 # ### Creating contingency table 
@@ -49,20 +48,6 @@ mergeddata <- distinct(mergeddata)
 #        gp_legend = gpar(fontsize = 6))  # Font size for the legend labels
 
 # PAM50 vs RNA Decon estimates
-
-# Subsetting RNA SEQ to only containing high TILS samples (Only for TILs analyses)
-
-rna_seq_df <- rna_seq_df[,colnames(rna_seq_df) %in% sampleID]
-ncol(rna_seq_df)
-
-rownames(uniqueData) <- uniqueData$rna_decon_sampleid
-
-# Reformatting and merging
-trans_rna_seq_df <- as.data.frame(t(rna_seq_df))
-
-trans_rna_seq_df$rna_decon_sampleid <- row.names(trans_rna_seq_df)
-
-# Change this line for other analysis TILS/PAM50
-trans_rna_seq_df <- merge(trans_rna_seq_df, uniqueData[, c("rna_decon_sampleid", "Call")], by = "rna_decon_sampleid")
-row.names(trans_rna_seq_df) <- trans_rna_seq_df$rna_decon_sampleid
-trans_rna_seq_df <- trans_rna_seq_df %>% select (-"rna_decon_sampleid")
+### Subsetting duplicate RNA seq sample IDs 
+unique_PAM <- mergeddata %>%
+  distinct(rna_decon_sampleid, .keep_all = TRUE)
