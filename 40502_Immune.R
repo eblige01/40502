@@ -251,7 +251,7 @@ go_results <- enrichGO(gene = deg_genes,
 # View the results
 summary(go_results)
 
-
+write_xlsx(as.data.frame(go_results), "sTILs_GO_results.xlsx")
 plot1 <- treeplot(go_results2) 
 # Plot the GO enrichment results
 dotplot(go_results)
