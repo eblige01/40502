@@ -5,11 +5,11 @@ library(dplyr)
 library(writexl)
 library(FSA) 
 library(DESeq2)
-library(clusterProfiler)
 library(org.Hs.eg.db) 
 library(enrichplot)
 library("enrichplot")
 library("GOSemSim")
+library("clusterProfiler")
 
 # Loading in the data
  # Replace with the latest version if needed
@@ -63,7 +63,7 @@ trans_rna_seq_df$rna_decon_sampleid <- row.names(trans_rna_seq_df)
 
 trans_rna_seq_df <- merge(trans_rna_seq_df, uniqueData[, c("rna_decon_sampleid","sTILs_cat","sTILs")], by = "rna_decon_sampleid")
 row.names(trans_rna_seq_df) <- trans_rna_seq_df$rna_decon_sampleid
-trans_rna_seq_df <- trans_rna_seq_df %>% select (-"rna_decon_sampleid")
+trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 
 
 # # sTILs Vs Immune
