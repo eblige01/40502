@@ -7,8 +7,6 @@ library(FSA)
 library(DESeq2)
 library(org.Hs.eg.db) 
 library(enrichplot)
-library("enrichplot")
-library("GOSemSim")
 library("clusterProfiler")
 
 # Loading in the data
@@ -253,11 +251,8 @@ go_results <- enrichGO(gene = deg_genes,
 # View the results
 summary(go_results)
 
-go_results2 <- pairwise_termsim(go_results)
-termsim <- as.data.frame(go_results2@termsim)
-plot1 <- treeplot(go_results2)
 
-head(go_results2@termsim)
+plot1 <- treeplot(go_results2) 
 # Plot the GO enrichment results
 dotplot(go_results)
 barplot(go_results)
