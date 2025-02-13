@@ -5,8 +5,14 @@ library(dplyr)
 library(writexl)
 library(FSA) 
 library(DESeq2)
-# Loading in the data
+library(clusterProfiler)
+library(org.Hs.eg.db) 
+library(enrichplot)
+library("enrichplot")
+library("GOSemSim")
 
+# Loading in the data
+ # Replace with the latest version if needed
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
 D40502_data <- read.csv("~/Desktop/Research/StoverLab_rotation/data/D40502_data.csv", dec=",")
 pam50 <-  read.table("~/Desktop/Research/StoverLab_rotation/data/PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE, sep = "\t") 
@@ -199,7 +205,7 @@ ge_matrix <- ge_matrix[,-1]
 ge_matrix <- round(ge_matrix)
 ### Generating sample list for colData
 samples_list <- colnames(ge_matrix)
-samples_list<- samples_list[-1]
+
 
 ### Metadata for DESeq2
 colData <- data.frame(
@@ -236,4 +242,22 @@ ggplot(res, aes(x=log2FoldChange, y=-log10(pvalue))) +
   theme(legend.position="none") +
   geom_text(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1)
   
+deg_genes <- rownames(res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ])
 
+go_results <- enrichGO(gene = deg_genes,
+                       OrgDb = org.Hs.eg.db,   
+                       keyType = "SYMBOL",    
+                       ont = "BP",            
+                       pAdjustMethod = "BH",  
+                       qvalueCutoff = 0.05)  
+# View the results
+summary(go_results)
+
+go_results2 <- pairwise_termsim(go_results)
+termsim <- as.data.frame(go_results2@termsim)
+plot1 <- treeplot(go_results2)
+
+head(go_results2@termsim)
+# Plot the GO enrichment results
+dotplot(go_results)
+barplot(go_results)
