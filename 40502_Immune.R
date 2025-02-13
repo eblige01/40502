@@ -4,7 +4,7 @@ library("gplots")
 library(dplyr)  
 library(writexl)
 library(FSA) 
-
+library(DESeq2)
 # Loading in the data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -186,3 +186,54 @@ trans_rna_seq_df <- trans_rna_seq_df %>% select (-"rna_decon_sampleid")
 #        x = "PAM50 Subtype",
 #        y = "Mean Expression ± SE") +
 #   theme_minimal()
+#DESEQ2 
+
+ge_matrix <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/ge_matrix_40502.csv")
+
+### Removing samples that do not have sTILs data
+ge_matrix <- ge_matrix %>% select(1,all_of(uniqueData$rna_decon_sampleid))
+### Reformating count matrix
+row.names(ge_matrix) <- ge_matrix[,1]
+ge_matrix <- ge_matrix[,-1]
+
+ge_matrix <- round(ge_matrix)
+### Generating sample list for colData
+samples_list <- colnames(ge_matrix)
+samples_list<- samples_list[-1]
+
+### Metadata for DESeq2
+colData <- data.frame(
+  condition = uniqueData$sTILs_cat,
+  row.names = samples_list
+)
+
+### Constructing DESEq DataSet
+dds <- DESeqDataSetFromMatrix(countData = ge_matrix,
+                              colData = colData,
+                              design = ~ condition)
+dds <- DESeq(dds)
+### Making results table
+res <- results(dds, contrast = c("condition","High","Low"))
+
+resOrdered <- res[order(res$padj),]
+res_df <- as.data.frame(resOrdered)
+res_df$genes <- row.names(res_df)
+### Saving results
+
+write_xlsx(res_df, "sTILs_DESeq2.xlsx")
+# Filter for significant genes (adjusted p-value < 0.05 and abs(log2FoldChange) > 1)
+sig_genes <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ]
+
+# Identify the top 15 significant genes by adjusted p-value (or use other criteria)
+top_genes <- head(sig_genes[order(sig_genes$padj), ], 15)
+
+### Making Volcano plot
+ggplot(res, aes(x=log2FoldChange, y=-log10(pvalue))) +
+  geom_point(aes(color=padj < 0.05), alpha=0.5) +  # Points for all genes
+  scale_color_manual(values = c("gray", "red")) +
+  theme_minimal() +
+  labs(title="sTILs (High vs Low)", x="Log2 Fold Change", y="-Log10(p-value)") +
+  theme(legend.position="none") +
+  geom_text(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1)
+  
+
