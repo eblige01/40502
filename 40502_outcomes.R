@@ -27,33 +27,3 @@ pac_sub <- mergeddata %>% filter(arm == 1 , strat2_recep == 1)
 
 
 pac_sub <- merge(trans_rna_seq_df,pac_sub[c("survmos","pfsmos","pfsstat","survstat","rna_decon_sampleid")],by = "rna_decon_sampleid")
-# Converting for cox model
-pac_sub$pfsmos <- as.numeric(pac_sub$pfsmos)
-# Making cell type list for loop
-cell_types <-colnames(pac_sub) 
-cell_types <- setdiff(cell_types,c("survmos","pfsmos","pfsstat","survstat","rna_decon_sampleid"))
-
-# Create an empty list to store results
-cox_results <- list()
-
-# Loop through each cell type and run Cox regression
-for (cell in cell_types) {
-  # Create formula
-  cox_formula <- as.formula(paste("Surv(pfsmos, pfsstat) ~", cell))
-  
-  # Fit Cox model
-  cox_model <- coxph(cox_formula, data = pac_sub)
-  
-  # Extract summary
-  cox_summary <- summary(cox_model)
-  
-  # Store HR, confidence interval, and p-value
-  cox_results[[cell]] <- data.frame(
-    CellType = cell,
-    HR = exp(cox_summary$coefficients[1, 1]),
-    Lower_CI = exp(cox_summary$conf.int[1, 3]),
-    Upper_CI = exp(cox_summary$conf.int[1, 4]),
-    p_value = cox_summary$coefficients[1, 5]
-  )
-}
-
