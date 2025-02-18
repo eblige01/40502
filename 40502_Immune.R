@@ -127,30 +127,30 @@ resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^
 resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
 
  
-## Spearman correlation
-## Convert columns to numeric
-cont_tils <- as.numeric(as.character(resignature_data$sTILs))
-
-sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
-corrList <- list()
-for (type in sig_cols) {
-  # Convert the current column to numeric
-  resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
-
-  # Perform Spearman correlation
-  correlation <- cor(cont_tils, resignature_data[[type]], method = "spearman")
-
-  # Store the result in the list
-  corrList[[type]] <- correlation
-}
-
-# Convert corrList to a dataframe
-corr_df <- data.frame(
-  Cell_Type = names(corrList),
-  Spearmans_Correlation = unlist(corrList)
-)
-# Saving results
-write_xlsx(corr_df, "spearmans_sTILs_results.xlsx")
+# ## Spearman correlation
+# ## Convert columns to numeric
+# cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+# 
+# sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
+# corrList <- list()
+# for (type in sig_cols) {
+#   # Convert the current column to numeric
+#   resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
+# 
+#   # Perform Spearman correlation
+#   correlation <- cor(cont_tils, resignature_data[[type]], method = "spearman")
+# 
+#   # Store the result in the list
+#   corrList[[type]] <- correlation
+# }
+# 
+# # Convert corrList to a dataframe
+# corr_df <- data.frame(
+#   Cell_Type = names(corrList),
+#   Spearmans_Correlation = unlist(corrList)
+# )
+# # Saving results
+# write_xlsx(corr_df, "spearmans_sTILs_results.xlsx")
 
 # # sTILs vs Modules
 # # Initialize an empty dataframe to store module_results
@@ -278,7 +278,7 @@ go_results <- enrichGO(gene = deg_genes,
 summary(go_results)
 # Saving results
 write_xlsx(as.data.frame(go_results), "sTILs_GO_results.xlsx")
-plot1 <- treeplot(go_results2) 
+
 # Plot the GO enrichment results
-dotplot(go_results)
-barplot(go_results)
+plot1 <- dotplot(go_results)  + theme(axis.text.y = element_text(angle = 0, hjust = 1))
+plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
