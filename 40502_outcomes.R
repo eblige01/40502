@@ -20,7 +20,7 @@ M40502_joined_metadata <- M40502_joined_metadata[!is.na(M40502_joined_metadata$L
 mergeddata <- merge(D40502_data, M40502_joined_metadata[, c("patid","rna_decon_sampleid","INVESTIGATOR_SAMPLENAME")], by = "patid")
 mergeddata$rna_decon_sampleid <- gsub("Sample_", "sample",mergeddata$rna_decon_sampleid)
 
-
+# Paclitaxel amoung HR+
 #Subset data to only include paclitaxel treatment and patients that are HR+
 
 pac_sub <- mergeddata %>% filter(arm == 1 , strat2_recep == 1)
@@ -177,29 +177,43 @@ res_df$genes <- row.names(res_df)
 ### Saving results
 
 write_xlsx(res_df, "pac_response_DESeq2.xlsx")
+# Filter for significant genes (adjusted p-value < 0.05 and abs(log2FoldChange) > 1)
+sig_genes <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ]
+
+# Identify the top 15 significant genes by adjusted p-value (or use other criteria)
+top_genes <- head(sig_genes[order(sig_genes$padj), ], 15)
+
+# Filter for significant upregulated genes
+sig_upregulated_genes <- sig_genes[sig_genes$log2FoldChange > 0, ]
+
+# Identify the top 15 significant upregulated genes by adjusted p-value
+top_upregulated_genes <- head(sig_upregulated_genes[order(sig_upregulated_genes$padj), ], 15)
 
 ### Making Volcano plot
 ggplot(res, aes(x=log2FoldChange, y=-log10(pvalue))) +
   geom_point(aes(color=padj < 0.05), alpha=0.5) +  # Points for all genes
   scale_color_manual(values = c("gray", "red")) +
   theme_minimal() +
-  labs(title="sTILs (High vs Low)", x="Log2 Fold Change", y="-Log10(p-value)") +
+  labs(title="Paclitaxel Response", x="Log2 Fold Change", y="-Log10(p-value)") +
   theme(legend.position="none") +
   geom_text(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1)
 
-deg_genes <- rownames(res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ])
-# GO enrichment
-go_results <- enrichGO(gene = deg_genes,
-                       OrgDb = org.Hs.eg.db,   
-                       keyType = "SYMBOL",    
-                       ont = "BP",            
-                       pAdjustMethod = "BH",  
-                       qvalueCutoff = 0.05)  
-# View the results
-summary(go_results)
-# Saving results
-write_xlsx(as.data.frame(go_results), "sTILs_GO_results.xlsx")
+deg_genes <- rownames(sig_genes)
+sig_upregulated_list <- rownames(sig_upregulated_genes)
+# # GO enrichment
+# go_results <- enrichGO(gene = sig_upregulated_list,
+#                        OrgDb = org.Hs.eg.db,   
+#                        keyType = "SYMBOL",    
+#                        ont = "BP",            
+#                        pAdjustMethod = "bonferroni",  
+#                        qvalueCutoff = 0.05)  
+# # View the results
+# summary(go_results)
+# # Saving results
+# write_xlsx(as.data.frame(go_results), "sTILs_GO_results.xlsx")
+# 
+# # Plot the GO enrichment results
+# plot1 <- dotplot(go_results)  + theme(axis.text.y = element_text(angle = 0, hjust = 1))
+# plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# Plot the GO enrichment results
-plot1 <- dotplot(go_results)  + theme(axis.text.y = element_text(angle = 0, hjust = 1))
-plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# nab-paclitaxel amoung HR-
