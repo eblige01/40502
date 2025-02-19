@@ -1,7 +1,8 @@
-# 40502 RNA features vs outcomes  analysis 
+# 40502 Paclitaxel among HR+  analysis 
 library(survival)
 library(dplyr)
-
+library(DESeq2)
+library(ggplot2)
 # Loading data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -20,7 +21,7 @@ M40502_joined_metadata <- M40502_joined_metadata[!is.na(M40502_joined_metadata$L
 mergeddata <- merge(D40502_data, M40502_joined_metadata[, c("patid","rna_decon_sampleid","INVESTIGATOR_SAMPLENAME")], by = "patid")
 mergeddata$rna_decon_sampleid <- gsub("Sample_", "sample",mergeddata$rna_decon_sampleid)
 
-# Paclitaxel amoung HR+
+
 #Subset data to only include paclitaxel treatment and patients that are HR+
 
 pac_sub <- mergeddata %>% filter(arm == 1 , strat2_recep == 1)
@@ -216,4 +217,4 @@ sig_upregulated_list <- rownames(sig_upregulated_genes)
 # plot1 <- dotplot(go_results)  + theme(axis.text.y = element_text(angle = 0, hjust = 1))
 # plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-# nab-paclitaxel amoung HR-
+
