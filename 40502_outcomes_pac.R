@@ -26,14 +26,11 @@ mergeddata$rna_decon_sampleid <- gsub("Sample_", "sample",mergeddata$rna_decon_s
 
 pac_sub <- mergeddata %>% filter(arm == 1 , strat2_recep == 1)
 
-
-
-
-# Removing patients with no tumor response data
-pac_sub <- na.omit(pac_sub)
-
 # Creating response column 
 pac_sub$responder_stat <- ifelse(pac_sub$bestresp <= 2,"responder","nonresponder")
+
+# Removing patients with no tumor response data
+pac_sub <- pac_sub %>% filter(!is.na(responder_stat))
 
 pac_sub_rna <- merge(trans_rna_seq_df,pac_sub[c("bestresp","rna_decon_sampleid")],by = "rna_decon_sampleid")
 # # Pac_response Vs Decon 
