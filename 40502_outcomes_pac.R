@@ -3,6 +3,7 @@ library(survival)
 library(dplyr)
 library(DESeq2)
 library(ggplot2)
+library(writexl)
 # Loading data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
@@ -32,8 +33,8 @@ pac_sub$responder_stat <- ifelse(pac_sub$bestresp <= 2,"responder","nonresponder
 # Removing patients with no tumor response data
 pac_sub <- pac_sub %>% filter(!is.na(responder_stat))
 
-pac_sub_rna <- merge(trans_rna_seq_df,pac_sub[c("bestresp","rna_decon_sampleid")],by = "rna_decon_sampleid")
-# # Pac_response Vs Decon 
+pac_sub_rna <- merge(trans_rna_seq_df,pac_sub[c("responder_stat","rna_decon_sampleid")],by = "rna_decon_sampleid")
+# # Pac_response Vs Decon
 # # Initialize an empty dataframe to store module_module_results
 # rna_results <- data.frame(Cell = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
 # 
@@ -65,79 +66,81 @@ pac_sub_rna <- merge(trans_rna_seq_df,pac_sub[c("bestresp","rna_decon_sampleid")
 # # Subset significant module_results after adjustment (e.g., FDR < 0.05)
 # significant_rna_results <- rna_results %>% filter(p_adj < 0.05)
 # sig_cells <- significant_rna_results$Cell
+# 
 # #Saving results
 # write_xlsx(rna_results, "response_pac_decon.xlsx")
 
-
-signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
-
-# Reformatting signature data for analysis
-# Removing unnecessary rows and coloumns
-resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
-resignature_data <- resignature_data %>% slice(-c(1,2))
-
-# Transposing the dataframe
-resignature_data <- t(resignature_data)
-
-# Making first row colnames and making rownames a column
-colnames(resignature_data) <- resignature_data[1,]
-resignature_data <- resignature_data[-1,]
-resignature_data <- as.data.frame(resignature_data)
-resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
-
-# Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
-resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
-
-# Reformatting and merging
-resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
-
-resignature_data <- merge(resignature_data,pac_sub[, c("INVESTIGATOR_SAMPLENAME", "responder_stat")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
-
-# Pac_response vs Modules
-# Initialize an empty dataframe to store module_results
-module_results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
-
-# Get the gene column names (excluding sample_id and TIL_group)
-gene_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "responder_stat"))
-
-# Loop through each gene column
-for (gene in gene_cols) {
-  # Ensure the column is numeric
-  resignature_data[[gene]] <- as.numeric(resignature_data[[gene]])
-  # Perform Wilcoxon test (Mann-Whitney U test)
-  test_result <- wilcox.test(resignature_data[[gene]] ~ resignature_data$responder_stat)
-
-  # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
-  group_means <- resignature_data %>%
-    group_by(responder_stat) %>%
-    summarise(mean_expression = mean(!!sym(gene), na.rm = TRUE)) %>%
-    arrange(desc(mean_expression))
-
-  # Determine which group has higher expression
-  higher_group <- group_means$responder_stat[1]
-
-  # Append module_results to dataframe
-  module_results <- rbind(module_results, data.frame(Gene = gene, p_value = test_result$p.value,higher_expression = higher_group))
-}
-
-module_results$p_adj <- p.adjust(module_results$p_value, method = "BH")
-
-# Subset significant module_results after adjustment (e.g., FDR < 0.05)
-significant_module_results <- module_results %>% filter(p_adj < 0.05)
-
-#Reordering significant module_results
-significant_module_results <- significant_module_results %>%
-  mutate(PMID = ifelse(grepl("_PMID\\.\\d+$", Gene),
-                       sub(".*_PMID\\.", "", Gene),
-                       NA_character_)) %>%
-  arrange(desc(!is.na(PMID)), PMID)
-
-write_xlsx(module_results, "response_pac_modules.xlsx")
+# # Module analysis
+# signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+# 
+# # Reformatting signature data for analysis
+# # Removing unnecessary rows and coloumns
+# resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
+# resignature_data <- resignature_data %>% dplyr::slice(-c(1,2))
+# 
+# # Transposing the dataframe
+# resignature_data <- t(resignature_data)
+# 
+# # Making first row colnames and making rownames a column
+# colnames(resignature_data) <- resignature_data[1,]
+# resignature_data <- resignature_data[-1,]
+# resignature_data <- as.data.frame(resignature_data)
+# resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
+# 
+# # Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
+# resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
+# 
+# # Reformatting and merging
+# resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
+# 
+# resignature_data <- merge(resignature_data,pac_sub[, c("INVESTIGATOR_SAMPLENAME", "responder_stat")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
+# 
+# # Pac_response vs Modules
+# # Initialize an empty dataframe to store module_results
+# module_results <- data.frame(Gene = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
+# 
+# # Get the gene column names (excluding sample_id and TIL_group)
+# gene_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "responder_stat"))
+# 
+# # Loop through each gene column
+# for (gene in gene_cols) {
+#   # Ensure the column is numeric
+#   resignature_data[[gene]] <- as.numeric(resignature_data[[gene]])
+#   # Perform Wilcoxon test (Mann-Whitney U test)
+#   test_result <- wilcox.test(resignature_data[[gene]] ~ resignature_data$responder_stat)
+# 
+#   # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
+#   group_means <- resignature_data %>%
+#     group_by(responder_stat) %>%
+#     summarise(mean_expression = mean(!!sym(gene), na.rm = TRUE)) %>%
+#     arrange(desc(mean_expression))
+# 
+#   # Determine which group has higher expression
+#   higher_group <- group_means$responder_stat[1]
+# 
+#   # Append module_results to dataframe
+#   module_results <- rbind(module_results, data.frame(Gene = gene, p_value = test_result$p.value,higher_expression = higher_group))
+# }
+# 
+# module_results$p_adj <- p.adjust(module_results$p_value, method = "BH")
+# 
+# # Subset significant module_results after adjustment (e.g., FDR < 0.05)
+# significant_module_results <- module_results %>% filter(p_adj < 0.05)
+# 
+# #Reordering significant module_results
+# significant_module_results <- significant_module_results %>%
+#   mutate(PMID = ifelse(grepl("_PMID\\.\\d+$", Gene),
+#                        sub(".*_PMID\\.", "", Gene),
+#                        NA_character_)) %>%
+#   arrange(desc(!is.na(PMID)), PMID)
+# 
+# write_xlsx(module_results, "response_pac_modules.xlsx")
 
 #DESEQ2 
 
 ge_matrix <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/ge_matrix_40502.csv")
-
+# Removing Nas from RNA IDs
+pac_sub <- pac_sub %>% filter(!is.na(rna_decon_sampleid))
 ### Removing samples that do not have responder data
 ge_matrix <- ge_matrix %>% select(1,all_of(pac_sub$rna_decon_sampleid))
 ### Reformating count matrix
@@ -145,10 +148,9 @@ row.names(ge_matrix) <- ge_matrix[,1]
 ge_matrix <- ge_matrix[,-1]
 
 ge_matrix <- round(ge_matrix)
-
-
-### Generating sample list for colData
 samples_list <- colnames(ge_matrix)
+
+
 
 # Removing samples that do not have any RNA data from pac_sub
 pac_sub <-  pac_sub %>% filter(rna_decon_sampleid %in% samples_list)
@@ -174,7 +176,7 @@ res_df <- as.data.frame(resOrdered)
 res_df$genes <- row.names(res_df)
 ### Saving results
 
-write_xlsx(res_df, "pac_response_DESeq2.xlsx")
+write_xlsx(res_df, "response_pac_DESeq2.xlsx")
 # Filter for significant genes (adjusted p-value < 0.05 and abs(log2FoldChange) > 1)
 sig_genes <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ]
 
