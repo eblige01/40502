@@ -100,6 +100,31 @@ sig_cells <- significant_rna_results$Cell
 write_xlsx(significant_rna_results, "sTILs_decon.xlsx")
 
 
+
+## Convert columns to numeric
+cont_tils <- as.numeric(as.character(trans_rna_seq_df$sTILs))
+
+sig_cols <- setdiff(names(trans_rna_seq_df), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
+corrList <- list()
+for (type in sig_cols) {
+  # Convert the current column to numeric
+  trans_rna_seq_df[[type]] <- as.numeric(as.character(trans_rna_seq_df[[type]]))
+
+  # Perform Spearman correlation
+  correlation <- cor(cont_tils, trans_rna_seq_df[[type]], method = "spearman")
+
+  # Store the result in the list
+  corrList[[type]] <- correlation
+}
+
+# Convert corrList to a dataframe
+corr_df <- data.frame(
+  Cell_Type = names(corrList),
+  Spearmans_Correlation = unlist(corrList)
+)
+# Saving results
+write_xlsx(corr_df, "spearmans_decon_sTILs_results.xlsx")
+
 ### Module Analysis
 
 signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
