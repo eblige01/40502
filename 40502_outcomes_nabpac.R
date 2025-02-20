@@ -3,6 +3,7 @@ library(survival)
 library(dplyr)
 library(DESeq2)
 library(ggplot2)
+library(writexl)
 # Loading data
 
 M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
