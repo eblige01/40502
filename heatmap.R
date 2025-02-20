@@ -48,8 +48,8 @@ rownames(uniqueData) <- uniqueData$rna_decon_sampleid
 rna_seq_df <- rna_seq_df[, colSums(rna_seq_df != 0) > 0]
 trans_rna <- t(rna_seq_df)
 
-columnname2 <- c("B cell memory_CIBERSORT","T cell CD8+_CIBERSORT","NK cell activated_CIBERSORT","Macrophage M0_CIBERSORT")
-#columnname2 <- colnames(trans_rna)
+
+columnname2 <- colnames(trans_rna)
 #columnname2 <- columnname2[grep("CIBERSORT",columnname2)]
 cibersortdf <- as.data.frame(trans_rna[,colnames(trans_rna) %in% columnname2])
 cibersortdf$rownames <- row.names(cibersortdf)
@@ -57,12 +57,11 @@ uniqueData$rownames <- row.names(uniqueData)
 mergeCiber <- merge(cibersortdf,uniqueData, by="rownames")
 row.names(mergeCiber) <- mergeCiber$rownames
 mergeCiber <- mergeCiber[,-1]
-#columnmname1 <- c("B cell memory_CIBERSORT-ABS","T cell CD8+_CIBERSORT-ABS","NK cell activated_CIBERSORT-ABS","Macrophage M0_CIBERSORT-ABS","Call","bc_class","tils")
 columnmname1 <- c(columnname2,"Call","bc_class","tils")
 mergeCiber <- mergeCiber[,colnames(mergeCiber) %in% columnmname1]
 
 # Order by specific feature
-mergeCiber <- mergeCiber %>% group_by(Call)  %>% arrange(Call)
+mergeCiber <- mergeCiber %>% group_by(tils)  %>% arrange(tils)
 
 # Formatting for heatmap color bars
 PAM50vector=mergeCiber$Call
@@ -111,7 +110,7 @@ heatmap.2(mergeCiberdata,
 dev.off()
 heatmap_result <- heatmap.2(mergeCiberdata,
           Rowv=T,
-          Colv=F,
+          Colv=T,
           dendrogram = "none",
           scale="column",
           breaks = seq(-2, 2, length.out = 300),
@@ -123,8 +122,11 @@ heatmap_result <- heatmap.2(mergeCiberdata,
           key.title = NA,
           key.xlab = NA,
           key.ylab = NA, margins=c(5,5),
-          RowSideColors=SubtypeVector2, #PAM50vector2
-          cexRow=NULL, cexCol=0.75,srtCol = 4,)
+          RowSideColors=tilsVector2, #PAM50vector2
+          cexRow=NULL, 
+          cexCol=.75,
+          srtCol = 4,
+          labCol = NULL)
 
 
 dev.off()
