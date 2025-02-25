@@ -100,8 +100,8 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 # write_xlsx(significant_rna_results, "sTILs_decon.xlsx")
 # 
 # 
-# 
-# ## Convert columns to numeric
+# Kendall's correlation Immune Decon 
+## Convert columns to numeric
 # cont_tils <- as.numeric(as.character(trans_rna_seq_df$sTILs))
 # 
 # sig_cols <- setdiff(names(trans_rna_seq_df), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
@@ -120,62 +120,86 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 # # Convert corrList to a dataframe
 # corr_df <- data.frame(
 #   Cell_Type = names(corrList),
-#   Spearmans_Correlation = unlist(corrList)
+#   Kendalls_Correlation = unlist(corrList)
 # )
+# 
+# # Barplots for top and bottom correlations
+# top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(15)
+# top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(15)
+# ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
+#   geom_bar(stat = "identity") +
+#   coord_flip() +  # Flip for better readability
+#   #scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+#   labs(title = "Top 15 Most Positively Correlated Cell Types",
+#        x = "Cell Type",
+#        y = "Kendall's Correlation") +
+#   theme_minimal()
 # # Saving results
 # write_xlsx(corr_df, "kendalls_decon_sTILs_results.xlsx")
 
-# ### Module Analysis
-# 
-# signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
-# 
-# # Reformatting signature data for analysis
-# # Removing unnecessary rows and coloumns
-# resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
-# resignature_data <- resignature_data %>% slice(-c(1,2))
-# 
-# # Transposing the dataframe
-# resignature_data <- t(resignature_data)
-# 
-# # Making first row colnames and making rownames a column
-# colnames(resignature_data) <- resignature_data[1,]
-# resignature_data <- resignature_data[-1,]
-# resignature_data <- as.data.frame(resignature_data)
-# resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
-# 
-# # Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
-# resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
-# 
-# # Reformatting and merging
-# resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
-# 
-# resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
+### Module Analysis
+
+signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+
+# Reformatting signature data for analysis
+# Removing unnecessary rows and coloumns
+resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
+resignature_data <- resignature_data %>% slice(-c(1,2))
+
+# Transposing the dataframe
+resignature_data <- t(resignature_data)
+
+# Making first row colnames and making rownames a column
+colnames(resignature_data) <- resignature_data[1,]
+resignature_data <- resignature_data[-1,]
+resignature_data <- as.data.frame(resignature_data)
+resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
+
+# Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
+resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
+
+# Reformatting and merging
+resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
+
+resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
 
  
-# ## Correlation
-# ## Convert columns to numeric
-# cont_tils <- as.numeric(as.character(resignature_data$sTILs))
-# 
-# sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
-# corrList <- list()
-# for (type in sig_cols) {
-#   # Convert the current column to numeric
-#   resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
-# 
-#   # Perform Spearman correlation
-#   correlation <- cor(cont_tils, resignature_data[[type]], method = "kendall")
-# 
-#   # Store the result in the list
-#   corrList[[type]] <- correlation
-# }
-# 
-# # Convert corrList to a dataframe
-# corr_df <- data.frame(
-#   Cell_Type = names(corrList),
-#   Kendalls_Correlation = unlist(corrList)
-# )
-# # Saving results
-# write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
+## Correlation
+## Convert columns to numeric
+cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+
+sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
+corrList <- list()
+for (type in sig_cols) {
+  # Convert the current column to numeric
+  resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
+
+  # Perform correlation
+  correlation <- cor(cont_tils, resignature_data[[type]], method = "kendall")
+
+  # Store the result in the list
+  corrList[[type]] <- correlation
+}
+
+# Convert corrList to a dataframe
+corr_df <- data.frame(
+  Cell_Type = names(corrList),
+  Kendalls_Correlation = unlist(corrList)
+)
+# Barplots for top and bottom correlations
+top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(15)
+top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(15)
+ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +  # Flip for better readability
+  #scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  labs(title = "Top 15 Most Positively Correlated signatures",
+       x = "Cell Type",
+       y = "Kendall's Correlation") +
+  theme_minimal()
+
+# Saving results
+ write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
 
 # # sTILs vs Modules
 # # Initialize an empty dataframe to store module_results
