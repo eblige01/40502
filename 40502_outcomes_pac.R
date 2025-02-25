@@ -34,41 +34,41 @@ pac_sub$responder_stat <- ifelse(pac_sub$bestresp <= 2,"responder","nonresponder
 pac_sub <- pac_sub %>% filter(!is.na(responder_stat))
 
 pac_sub_rna <- merge(trans_rna_seq_df,pac_sub[c("responder_stat","rna_decon_sampleid")],by = "rna_decon_sampleid")
-# # Pac_response Vs Decon
-# # Initialize an empty dataframe to store module_module_results
-# rna_results <- data.frame(Cell = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
-# 
-# # Get the gene column names (excluding sample_id and TIL_group)
-# cell_cols <- setdiff(names(pac_sub_rna), c("rna_decon_sampleid", "bestresp","responder_stat"))
-# 
-# # Loop through each gene column
-# for (cell in cell_cols) {
-#   # Ensure the column is numeric
-#   pac_sub_rna[[cell]] <- as.numeric(pac_sub_rna[[cell]])
-#   # Perform Wilcoxon test (Mann-Whitney U test)
-#   test_result <- wilcox.test(pac_sub_rna[[cell]] ~ pac_sub_rna$responder_stat)
-# 
-#   # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
-#   group_means <- pac_sub_rna %>%
-#     group_by(responder_stat) %>%
-#     summarise(mean_expression = mean(!!sym(cell), na.rm = TRUE)) %>%
-#     arrange(desc(mean_expression))
-# 
-#   # Determine which group has higher expression
-#   higher_group <- group_means$responder_stat[1]
-# 
-#   # Append module_results to dataframe
-#   rna_results <- rbind(rna_results, data.frame(Cell = cell, p_value = test_result$p.value,higher_expression = higher_group))
-# }
-# 
-# rna_results$p_adj <- p.adjust(rna_results$p_value, method = "bonferroni")
-# 
-# # Subset significant module_results after adjustment (e.g., FDR < 0.05)
-# significant_rna_results <- rna_results %>% filter(p_adj < 0.05)
-# sig_cells <- significant_rna_results$Cell
-# 
-# #Saving results
-# write_xlsx(rna_results, "response_pac_decon.xlsx")
+# Pac_response Vs Decon
+# Initialize an empty dataframe to store module_module_results
+rna_results <- data.frame(Cell = character(), p_value = numeric(), stringsAsFactors = FALSE,higher_expression = character())
+
+# Get the gene column names (excluding sample_id and TIL_group)
+cell_cols <- setdiff(names(pac_sub_rna), c("rna_decon_sampleid", "bestresp","responder_stat"))
+
+# Loop through each gene column
+for (cell in cell_cols) {
+  # Ensure the column is numeric
+  pac_sub_rna[[cell]] <- as.numeric(pac_sub_rna[[cell]])
+  # Perform Wilcoxon test (Mann-Whitney U test)
+  test_result <- wilcox.test(pac_sub_rna[[cell]] ~ pac_sub_rna$responder_stat)
+
+  # Calculate mean expression for each group will be used to determine the dirrection of sig module_results
+  group_means <- pac_sub_rna %>%
+    group_by(responder_stat) %>%
+    summarise(mean_expression = mean(!!sym(cell), na.rm = TRUE)) %>%
+    arrange(desc(mean_expression))
+
+  # Determine which group has higher expression
+  higher_group <- group_means$responder_stat[1]
+
+  # Append module_results to dataframe
+  rna_results <- rbind(rna_results, data.frame(Cell = cell, p_value = test_result$p.value,higher_expression = higher_group))
+}
+
+rna_results$p_adj <- p.adjust(rna_results$p_value, method = "bonferroni")
+
+# Subset significant module_results after adjustment (e.g., FDR < 0.05)
+significant_rna_results <- rna_results %>% filter(p_adj < 0.05)
+sig_cells <- significant_rna_results$Cell
+
+#Saving results
+write_xlsx(rna_results, "response_pac_decon.xlsx")
 
 # # Module analysis
 # signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
