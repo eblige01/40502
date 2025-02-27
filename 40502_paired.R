@@ -9,7 +9,7 @@ library(writexl)
 ## PAM50 analysis 
 
 # Loading data
-paired_metadata <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/paired_metadata_dupadj.csv")
+paired_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\paired_metadata_dupadj.csv")
 
 
 # Removing any rows with exclude = Yes
@@ -24,7 +24,7 @@ paired_metadata_sub <- subset(paired_metadata, DeIdentifiedNumber %in% duplicate
 paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifiedNumber), ]
 
 # ### PAM50 Anaylsis
-# pam50_metadata <- read.delim("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE)
+# pam50_metadata <- read.delim(""C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE)
 # 
 # # Removing NA values from the call column
 # pam50_metadata <- pam50_metadata %>% filter(!is.na(Call))
@@ -83,9 +83,9 @@ paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifie
 
 
 ### RNA Deconvolution analysis
-
-# rna_data <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/rna_decon_matrix_40502.csv")
-# rna_metadata <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/all_rna_samples_metadata.csv")
+data <- file.choose()
+# rna_data <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\rna_decon_matrix_40502.csv")
+# rna_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\all_rna_samples_metadata.csv")
 # 
 # # Reformating rna_metadata to match rna_data
 # rna_metadata$rna_decon_sampleid <- gsub("_", "", tolower(rna_metadata$rna_decon_sampleid))
@@ -153,8 +153,9 @@ paired_metadata_sub <- paired_metadata_sub[order(paired_metadata_sub$DeIdentifie
 
 
 #Module analysis
-M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
-signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\40502_joined_metadata_fixed.csv", dec=",")
+signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+
 # Reformatting signature data for analysis
 # Removing unnecessary rows and coloumns
 resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))

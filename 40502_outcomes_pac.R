@@ -6,12 +6,11 @@ library(ggplot2)
 library(writexl)
 # Loading data
 
-M40502_joined_metadata <- read.csv("~/Desktop/Research/StoverLab_rotation/data/40502_joined_metadata_fixed.csv", dec=",")
-D40502_data <- read.csv("~/Desktop/Research/StoverLab_rotation/data/D40502_data.csv", dec=",")
-rna_seq_df <- read.csv("~/Desktop/Research/StoverLab_rotation/data/rna_decon_matrix_40502.csv", dec=",")
+M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\40502_joined_metadata_fixed.csv", dec=",")
+D40502_data <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\NCTN-D3-recoded.csv", dec=",")
+rna_seq_df <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\rna_decon_matrix_40502.csv", dec=",")
 rownames(rna_seq_df) <- rna_seq_df[,1]
 rna_seq_df <- rna_seq_df[,-1]
-
 
 # Reformating for the analysis
 trans_rna_seq_df <- as.data.frame(t(rna_seq_df))
@@ -71,7 +70,8 @@ sig_cells <- significant_rna_results$Cell
 write_xlsx(rna_results, "response_pac_decon.xlsx")
 
 # # Module analysis
-# signature_data <- read.table("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+# signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+
 # 
 # # Reformatting signature data for analysis
 # # Removing unnecessary rows and coloumns
@@ -138,7 +138,8 @@ write_xlsx(rna_results, "response_pac_decon.xlsx")
 
 #DESEQ2 
 
-ge_matrix <- read.csv("/Users/eblige99/Desktop/Research/StoverLab_rotation/data/ge_matrix_40502.csv")
+ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\ge_matrix_40502.csv")
+
 # Removing Nas from RNA IDs
 pac_sub <- pac_sub %>% filter(!is.na(rna_decon_sampleid))
 ### Removing samples that do not have responder data
