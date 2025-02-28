@@ -138,7 +138,7 @@ write_xlsx(rna_results, "response_pac_decon.xlsx")
 
 #DESEQ2 
 
-ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\ge_matrix_40502.csv")
+ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\ge_matrix_40502.csv")
 
 # Removing Nas from RNA IDs
 pac_sub <- pac_sub %>% filter(!is.na(rna_decon_sampleid))

@@ -153,8 +153,8 @@ data <- file.choose()
 
 
 #Module analysis
-M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\40502_joined_metadata_fixed.csv", dec=",")
-signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\40502_joined_metadata_fixed.csv", dec=",")
+signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
 
 # Reformatting signature data for analysis
 # Removing unnecessary rows and coloumns
