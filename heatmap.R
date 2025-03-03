@@ -2,14 +2,48 @@
 #######################
 library(gplots)
 library(dplyr)
+library(tidyr)
+library(writexl)
+ 
+
 
 # Loading in the data 
-M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\40502_joined_metadata_fixed.csv", dec=",")
-D40502_data <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\NCTN-D3-recoded.csv", dec=",")
-pam50 <-  read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE, sep = "\t") 
-rna_seq_df <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\rna_decon_matrix_40502.csv", dec=",")
+M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\40502_joined_metadata_fixed.csv", dec=",")
+D40502_data <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\NCTN-D3-recoded.csv", dec=",")
+pam50 <-  read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\PAM50scores_C40502_ZHAO4_AFM_09.16.21_pam50scores.txt", header = TRUE, sep = "\t") 
+rna_seq_df <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\rna_decon_matrix_40502.csv", dec=",")
 rownames(rna_seq_df) <- rna_seq_df[,1]
 rna_seq_df <- rna_seq_df[,-1]
+
+# Subsetting based on Cell_Cat
+#rna_seq_df <- subset(rna_seq_df, Cell_Cat == "Macrophage/Monocyte")
+
+# Reordering RNA seq based on cell cat
+rna_seq_df$Cell_Cat <- factor(rna_seq_df$Cell_Cat, levels = c("T cell","Macrophage/Monocyte","B Cell","Dendritic cell","Granulocytes","NK cell","Mast cell","Score","Progenitor","Endothelial cell","Cancer associated fibroblast","Uncharacterized"))
+rna_seq_df <- rna_seq_df %>% arrange(Cell_Cat)
+# Making column colors for heatmap
+
+cell_cat <- rna_seq_df$Cell_Cat
+cell_cat <- gsub("B Cell","red",cell_cat)
+cell_cat <- gsub("Dendritic cell","blue",cell_cat)
+cell_cat <- gsub("Granulocytes","green",cell_cat)
+cell_cat <- gsub("Mast cell","orange",cell_cat)
+cell_cat <- gsub("Progenitor","pink",cell_cat)
+cell_cat <- gsub("T cell","khaki2",cell_cat)
+cell_cat <- gsub("Cancer associated fibroblast","lightsalmon",cell_cat)
+cell_cat <- gsub("Endothelial cell","maroon",cell_cat)
+cell_cat <- gsub("Macrophage/Monocyte","mediumaquamarine",cell_cat)
+cell_cat <- gsub("NK cell","navy",cell_cat)
+cell_cat <- gsub("Score","orchid",cell_cat)
+cell_cat <- gsub("Uncharacterized","brown",cell_cat)
+
+
+
+# Removing Cell_Cat col
+rna_seq_df <- rna_seq_df[,-1]
+
+
+table(rna_seq_df$Cell_Cat)
 
 #Investigating size differences:
 
@@ -89,7 +123,7 @@ mergeCiberdata <- apply(as.matrix(mergeCiber[,colnames(mergeCiber) %in% columnna
 # Making the heatmaps
 heatmap.2(mergeCiberdata,
           Rowv = F,
-          Colv = T,
+          Colv = F,
           dendrogram = "none",
           scale = "column",
           breaks = seq(-3, 3, length.out = 300),
@@ -101,9 +135,11 @@ heatmap.2(mergeCiberdata,
           key.title = NA,
           key.ylab = NULL,
           key.xlab = NULL,
+          labCol  = FALSE,
           margins = c(5, 8),  # Increased right margin
-          RowSideColors = PAM50vector2,  # tilsVector2 SubtypeVector2 PAM50vector2
-          cexRow = NULL, cexCol = 1, srtCol = -5, offsetCol = 0.5,adjCol = c(0,1))
+          RowSideColors = tilsVector2,
+          ColSideColors = cell_cat )  # tilsVector2 SubtypeVector2 PAM50vector2
+          #cexRow = NULL, cexCol = 1, srtCol = -5, offsetCol = 0.5,adjCol = c(0,1))
 
 
 
