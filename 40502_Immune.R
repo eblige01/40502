@@ -17,7 +17,7 @@ pam50 <-  read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University We
 rna_seq_df <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\rna_decon_matrix_40502.csv", dec=",")
 rownames(rna_seq_df) <- rna_seq_df[,1]
 rna_seq_df <- rna_seq_df[,-1]
-
+cell_cat <- rna_seq_df$Cell_Cat
 
 # Reformating and merging 
 M40502_joined_metadata <- M40502_joined_metadata[!is.na(M40502_joined_metadata$Label.on.Curls),]
@@ -98,8 +98,28 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 # sig_cells <- significant_rna_results$Cell
 # #Saving results
 # write_xlsx(significant_rna_results, "sTILs_decon.xlsx")
-# 
-# 
+
+#Barplot for comparing significant cell types
+
+# Making table for cell counts and significant counts.
+cell_cat_table <- data.frame(
+  Category = rep(unique(cell_cat), 2),
+  Value = c(15,3,10,3,9,19,5,8,4,4,37,2,9,2,4,0,1,7,1,1,0,2,17,0),
+  Group = rep(c("Group 1", "Group 2"), each = 12)
+)
+
+# Plot with Overlaying Bars
+ggplot(cell_cat_table, aes(x = reorder(Category,-Value), y = Value, fill = Group)) +
+  geom_bar(stat = "identity", position = "identity", alpha = 0.5) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "Cell Types",    # Change X-axis label
+    y = "Count",    # Change Y-axis label
+  ) 
+  
+
+
 # Kendall's correlation Immune Decon 
 ## Convert columns to numeric
 # cont_tils <- as.numeric(as.character(trans_rna_seq_df$sTILs))
