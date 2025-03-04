@@ -23,23 +23,24 @@ rna_seq_df$Cell_Cat <- factor(rna_seq_df$Cell_Cat, levels = c("T cell","Macropha
 rna_seq_df <- rna_seq_df %>% arrange(Cell_Cat)
 # Making column colors for heatmap
 
-cell_cat <- rna_seq_df$Cell_Cat
-cell_cat <- gsub("B Cell","red",cell_cat)
-cell_cat <- gsub("Dendritic cell","blue",cell_cat)
-cell_cat <- gsub("Granulocytes","green",cell_cat)
-cell_cat <- gsub("Mast cell","orange",cell_cat)
-cell_cat <- gsub("Progenitor","pink",cell_cat)
-cell_cat <- gsub("T cell","khaki2",cell_cat)
-cell_cat <- gsub("Cancer associated fibroblast","lightsalmon",cell_cat)
-cell_cat <- gsub("Endothelial cell","maroon",cell_cat)
-cell_cat <- gsub("Macrophage/Monocyte","mediumaquamarine",cell_cat)
-cell_cat <- gsub("NK cell","navy",cell_cat)
-cell_cat <- gsub("Score","orchid",cell_cat)
-cell_cat <- gsub("Uncharacterized","brown",cell_cat)
+cell_cat2 <- rna_seq_df$Cell_Cat
+cell_cat2 <- gsub("B Cell","yellow",cell_cat2)
+cell_cat2 <- gsub("Dendritic cell","firebrick",cell_cat2)
+cell_cat2 <- gsub("Granulocytes","goldenrod",cell_cat2)
+cell_cat2 <- gsub("Mast cell","forestgreen",cell_cat2)
+cell_cat2 <- gsub("Progenitor","darkorange",cell_cat2)
+cell_cat2 <- gsub("T cell","deepskyblue",cell_cat2)
+cell_cat2 <- gsub("Cancer associated fibroblast","mediumorchid",cell_cat2)
+cell_cat2 <- gsub("Endothelial cell","chocolate",cell_cat2)
+cell_cat2 <- gsub("Macrophage/Monocyte","yellowgreen",cell_cat2)
+cell_cat2 <- gsub("NK cell","slateblue",cell_cat2)
+cell_cat2 <- gsub("Score","tomato",cell_cat2)
+cell_cat2 <- gsub("Uncharacterized","cyan4",cell_cat2)
 
 
 
 # Removing Cell_Cat col
+cell_cat <- rna_seq_df[,1]
 rna_seq_df <- rna_seq_df[,-1]
 
 
@@ -117,7 +118,10 @@ tilsVector <- mergeCiber$tils
 tilsVector2 <- tilsVector
 tilsVector2 <- gsub("1","grey",tilsVector2)
 tilsVector2 <-  gsub("0","black",tilsVector2)
-
+tils_cat <- tilsVector
+tils_cat <-  gsub("1","High",tils_cat)
+tils_cat <-  gsub("0","Low",tils_cat)
+# Making tils categories for legend
 mergeCiberdata <- apply(as.matrix(mergeCiber[,colnames(mergeCiber) %in% columnname2]),2,as.numeric)
 
 # Making the heatmaps
@@ -138,9 +142,13 @@ heatmap.2(mergeCiberdata,
           labCol  = FALSE,
           margins = c(5, 8),  # Increased right margin
           RowSideColors = tilsVector2,
-          ColSideColors = cell_cat )  # tilsVector2 SubtypeVector2 PAM50vector2
+          ColSideColors = cell_cat2 )  # tilsVector2 SubtypeVector2 PAM50vector2
           #cexRow = NULL, cexCol = 1, srtCol = -5, offsetCol = 0.5,adjCol = c(0,1))
 
+# Note to self could not get legend to fit on heatmap so generate separately and screenshot
+# legend("bottom",legend = unique(tils_cat),col = unique(tilsVector2), lty= 1,             
+#           lwd = 5,           
+#           cex=.6)
 
 
 dev.off()
