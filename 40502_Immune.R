@@ -258,6 +258,7 @@ ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kenda
     axis.line.x = element_line(color = "black"), # Removes x-axis line if unnecessary
     plot.margin = margin(20, 30, 20, 30)
   ) +
+  expand_limits(y = .5) +
   scale_y_continuous(expand = c(0, 0),)
 # Saving results
  write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
