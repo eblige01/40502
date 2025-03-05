@@ -3,11 +3,10 @@ library(ggplot2)
 library("gplots")
 library(dplyr)  
 library(writexl)
-library(FSA) 
 library(DESeq2)
-library(org.Hs.eg.db) 
 library(enrichplot)
-library("clusterProfiler")
+library(extrafont)
+library("corrplot")
 
 # Loading in the data
 # Replace with the latest version if needed
@@ -102,22 +101,35 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 #Barplot for comparing significant cell types
 
 # Making table for cell counts and significant counts.
-cell_cat_table <- data.frame(
-  Category = rep(unique(cell_cat), 2),
-  Value = c(15,3,10,3,9,19,5,8,4,4,37,2,9,2,4,0,1,7,1,1,0,2,17,0),
-  Group = rep(c("Group 1", "Group 2"), each = 12)
-)
+# cell_cat_table <- data.frame(
+#   Category = rep(unique(cell_cat), 2),
+#   Value = c(15,3,10,3,9,19,5,8,4,4,37,2,9,2,4,0,1,7,1,1,0,2,17,0),
+#   Group = rep(c("Group 1", "Group 2"), each = 12)
+# )
+# 
+# # Plot with Overlaying Bars
+# ggplot(cell_cat_table, aes(x = reorder(Category,-Value), y = Value, fill = Group)) +
+#   geom_bar(stat = "identity", position = "identity", alpha = 0.7) +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1,size = 11.5),
+#         axis.text.y = element_text(size = 9),
+#         legend.title = element_blank(),
+#         panel.grid.major = element_blank(),  # Remove major gridlines
+#         panel.grid.minor = element_blank(),  # Remove minor gridlines
+#         axis.line = element_line(color = "black", size = 0.8), # Add axis lines
+#         axis.ticks = element_line(color = "black")) +
+#   scale_y_continuous(expand = c(0, 0),
+#         breaks = seq(0, max(cell_cat_table$Value), by = 5)) + # Makes y = 0 touch the x axis and decreases increments
+#   scale_fill_manual( values = c("Group 1" = "grey56","Group 2" = "blue"), # this line is to change the labels for legends and fix the overlapping color problem
+#         labels = c("Total estimates","Different between sTILs")) +
+#   labs(
+#     x = "Cell Types",    # Change X-axis label
+#     y = "Estimate count",    # Change Y-axis label
+#   ) 
+#   
 
-# Plot with Overlaying Bars
-ggplot(cell_cat_table, aes(x = reorder(Category,-Value), y = Value, fill = Group)) +
-  geom_bar(stat = "identity", position = "identity", alpha = 0.5) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(
-    x = "Cell Types",    # Change X-axis label
-    y = "Count",    # Change Y-axis label
-  ) 
-  
+
+
 
 
 # Kendall's correlation Immune Decon 
@@ -158,13 +170,13 @@ ggplot(cell_cat_table, aes(x = reorder(Category,-Value), y = Value, fill = Group
 # write_xlsx(corr_df, "kendalls_decon_sTILs_results.xlsx")
 
 ### Module Analysis
-data <- file.choose()
+
 signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
 
 # Reformatting signature data for analysis
 # Removing unnecessary rows and coloumns
 resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
-resignature_data <- resignature_data %>% slice(-c(1,2))
+resignature_data <- resignature_data %>% dplyr :: slice(-c(1,2))
 
 # Transposing the dataframe
 resignature_data <- t(resignature_data)
@@ -189,35 +201,64 @@ resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENA
 cont_tils <- as.numeric(as.character(resignature_data$sTILs))
 
 sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
+
+
+# Initialize lists for correlations and p-values
 corrList <- list()
+pValueList <- list()
+
+# Convert continuous sTILs to numeric
+cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+
+sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat", "sTILs"))
+
+# Loop through each column and compute Kendall's correlation and p-value
 for (type in sig_cols) {
-  # Convert the current column to numeric
   resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
-
-  # Perform correlation
-  correlation <- cor(cont_tils, resignature_data[[type]], method = "kendall")
-
-  # Store the result in the list
-  corrList[[type]] <- correlation
+  
+  test_result <- cor.test(cont_tils, resignature_data[[type]], method = "kendall")
+  
+  corrList[[type]] <- test_result$estimate  # Kendall's Tau
+  pValueList[[type]] <- test_result$p.value # p-value
 }
 
-# Convert corrList to a dataframe
+# Convert to data frame
 corr_df <- data.frame(
   Cell_Type = names(corrList),
-  Kendalls_Correlation = unlist(corrList)
+  Kendalls_Correlation = unlist(corrList),
+  P_Value = unlist(pValueList)
 )
-# Barplots for top and bottom correlations
-top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(15)
-top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(15)
-ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +  # Flip for better readability
-  #scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
-  labs(title = "Top 15 Most Positively Correlated signatures",
-       x = "Cell Type",
-       y = "Kendall's Correlation") +
-  theme_minimal()
 
+# Add significance stars (e.g., * p < 0.05, ** p < 0.01, *** p < 0.001)
+corr_df <- corr_df %>%
+  mutate(Significance = case_when(
+    P_Value < 0.001 ~ "***",
+    P_Value < 0.01  ~ "**",
+    P_Value < 0.05  ~ "*",
+    TRUE            ~ ""
+  ))
+
+
+
+# lollipop plot for top and bottom correlations
+top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(20)
+top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(20)
+
+
+ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
+  geom_segment(aes(xend = Cell_Type, y = 0, yend = Kendalls_Correlation), color = "steelblue", size = 1) +  # Lollipop stem
+  geom_point(color = "red", size = 4) +  # Lollipop head
+  coord_flip() +  # Flip for readability
+  labs(x = "Signature",
+       y = "Kendall's Correlation") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),  # Removes all background grid lines
+    axis.line.y = element_line(color = "black"),  # Keeps only the y-axis line
+    axis.line.x = element_line(color = "black"), # Removes x-axis line if unnecessary
+    plot.margin = margin(20, 30, 20, 30)
+  ) +
+  scale_y_continuous(expand = c(0, 0),)
 # Saving results
  write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
 
