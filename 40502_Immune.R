@@ -4,9 +4,11 @@ library("gplots")
 library(dplyr)  
 library(writexl)
 library(DESeq2)
-library(enrichplot)
+library(org.Hs.eg.db)  
+library("clusterProfiler")
 library(extrafont)
 library("corrplot")
+library(ggrepel)
 
 # Loading in the data
 # Replace with the latest version if needed
@@ -360,32 +362,45 @@ resOrdered <- res[order(res$padj),]
 res_df <- as.data.frame(resOrdered)
 res_df$genes <- row.names(res_df)
 ### Saving results
+# Adding direction column for res_df
+res_df$diffexpressed <- "NO"
+res_df$diffexpressed[res_df$log2FoldChange > 1 & res_df$pvalue < .001] <- "UP"
+res_df$diffexpressed[res_df$log2FoldChange < -1 & res_df$pvalue < .001] <- "DOWN"
 
+# Subsetting differentially expressed genes
+diff_expr <- subset(res_df, res_df$diffexpressed != "NO")
 write_xlsx(res_df, "sTILs_DESeq2.xlsx")
-# Filter for significant genes (adjusted p-value < 0.05 and abs(log2FoldChange) > 1)
-sig_genes <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ]
+# Create a new column "delabel" to de, that will contain the name of the top 30 differentially expressed genes (NA in case they are not)
+top_genes<- res_df[abs(res_df$log2FoldChange) > 1, ]  # Filter genes with |Log2FC| > 1
+top_genes <- top_genes[order(top_genes$padj), ]  # Order by significance (padj)
+top_genes <- head(top_genes, 30)  # Select the top 30
 
-sig_upregulated_genes <- sig_genes[sig_genes$log2FoldChange > 0, ]
-
-sig_downregulated_genes <- sig_genes[sig_genes$log2FoldChange < 0, ]
-# Identify the top 15 significant genes by adjusted p-value (or use other criteria)
-top_genes <- head(sig_genes[order(sig_genes$padj), ], 15)
+# Assign gene names for labeling, else NA
+res_df$delabel <- ifelse(res_df$genes %in% top_genes$genes, res_df$genes, NA)
 
 ### Making Volcano plot
-ggplot(res, aes(x=log2FoldChange, y=-log10(pvalue))) +
-  geom_point(aes(color=padj < 0.05), alpha=0.5) +  # Points for all genes
-  scale_color_manual(values = c("gray", "red")) +
-  theme_minimal() +
-  labs(title="sTILs (High vs Low)", x="Log2 Fold Change", y="-Log10(p-value)") +
-  theme(legend.position="none",panel.grid = element_blank()) +
-  geom_text_repel(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1, max.overlaps = 50, force = 3) 
 
+
+ggplot(res_df,aes(x = log2FoldChange, y = -log10(pvalue), col = diffexpressed, label = delabel )) +
+  geom_vline(xintercept = c(-1, 1), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = -log10(0.001), col = "gray", linetype = 'dashed') + 
+  geom_point() + 
+  scale_color_manual(values = c("blue","grey","red"),
+                     labels = c("Downregulated","Not significant","Upregulated")) +
+  coord_cartesian(ylim = c(0, 30), xlim = c(-6, 6)) + # since some genes can have minuslog10padj of inf, we set these limits
+  labs( x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
+  scale_x_continuous(breaks = seq(-6, 6, 2)) + # to customise the breaks in the x axis
+  geom_text_repel(max.overlaps = Inf, size = 3, force = 3 , color = "black") +
+  ggtitle('TILS High(>=5%) vs Low(<5%)') +
+  theme(legend.title = element_blank(),
+        axis.title.y = element_text(face = "bold", margin = margin(0,20,0,0), size = rel(.7), color = 'black'),
+        axis.title.x = element_text(hjust = 0.5, face = "bold", margin = margin(20,0,0,0), size = rel(.7), color = 'black'),
+        plot.title = element_text(hjust = 0.5,size = rel(.9),face = "bold"))
+  
 # Isolating gene names
-deg_genes <- rownames(res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ])
-upreg_genes <- rownames(sig_upregulated_genes)
-downreg_genes <- rownames(sig_downregulated_genes)
-
-go_results <- enrichGO(gene = downreg_genes,
+upreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "UP" ))$genes
+downreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "DOWN" ))$genes
+go_results <- enrichGO(gene = upreg_genes,
                        OrgDb = org.Hs.eg.db,   
                        keyType = "SYMBOL",    
                        ont = "BP",            
@@ -394,8 +409,11 @@ go_results <- enrichGO(gene = downreg_genes,
 # View the results
 summary(go_results)
 # Saving results
-write_xlsx(as.data.frame(go_results), "sTILs_GO_downregulated_results.xlsx")
+write_xlsx(as.data.frame(go_results), "sTILs_GO_upregulated_results.xlsx")
 
 # Plot the GO enrichment results
-plot1 <- dotplot(go_results)  + theme(axis.text.y = element_text(angle = 0, hjust = 1))
+dotplot(go_results,x= "count") +  
+            theme(axis.text.y = element_text(angle = 0, hjust = 1),
+            plot.title = element_text(hjust = 0.5,size = rel(2),face = "bold")) + 
+            ggtitle("Pathways of downregualated genes")
 plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
