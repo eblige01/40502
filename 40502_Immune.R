@@ -249,7 +249,7 @@ ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kenda
   geom_segment(aes(xend = Cell_Type, y = 0, yend = Kendalls_Correlation), color = "steelblue", size = 1) +  # Lollipop stem
   geom_point(color = "red", size = 4) +  # Lollipop head
   coord_flip() +  # Flip for readability
-  labs(x = "Signature",
+  labs(x = "Signatures",
        y = "Kendall's Correlation") +
   theme_minimal() +
   theme(
@@ -328,7 +328,7 @@ ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kenda
 #        y = "Mean Expression ± SE") +
 #   theme_minimal()
 #DESEQ2 
-data <- file.choose()
+
 ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\ge_matrix_40502.csv")
 
 ### Removing samples that do not have sTILs data
@@ -377,8 +377,8 @@ ggplot(res, aes(x=log2FoldChange, y=-log10(pvalue))) +
   scale_color_manual(values = c("gray", "red")) +
   theme_minimal() +
   labs(title="sTILs (High vs Low)", x="Log2 Fold Change", y="-Log10(p-value)") +
-  theme(legend.position="none") +
-  geom_text(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1)
+  theme(legend.position="none",panel.grid = element_blank()) +
+  geom_text_repel(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1, max.overlaps = 50, force = 3) 
 
 # Isolating gene names
 deg_genes <- rownames(res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ])
