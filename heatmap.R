@@ -19,12 +19,12 @@ rna_seq_df <- rna_seq_df[,-1]
 #rna_seq_df <- subset(rna_seq_df, Cell_Cat == "Macrophage/Monocyte")
 
 # Reordering RNA seq based on cell cat
-rna_seq_df$Cell_Cat <- factor(rna_seq_df$Cell_Cat, levels = c("T cell","Macrophage/Monocyte","B Cell","Dendritic cell","Granulocytes","NK cell","Mast cell","Score","Progenitor","Endothelial cell","Cancer associated fibroblast","Uncharacterized"))
+rna_seq_df$Cell_Cat <- factor(rna_seq_df$Cell_Cat, levels = c("T cell","Macrophage/Monocyte","B cell","Dendritic cell","Granulocytes","NK cell","Mast cell","Score","Progenitor","Endothelial cell","Cancer associated fibroblast","Uncharacterized"))
 rna_seq_df <- rna_seq_df %>% arrange(Cell_Cat)
 # Making column colors for heatmap
 
 cell_cat2 <- rna_seq_df$Cell_Cat
-cell_cat2 <- gsub("B Cell","yellow",cell_cat2)
+cell_cat2 <- gsub("B cell","yellow",cell_cat2)
 cell_cat2 <- gsub("Dendritic cell","firebrick",cell_cat2)
 cell_cat2 <- gsub("Granulocytes","goldenrod",cell_cat2)
 cell_cat2 <- gsub("Mast cell","forestgreen",cell_cat2)
@@ -137,6 +137,7 @@ heatmap.2(mergeCiberdata,
           keysize = 1,  # Increased key size
           density.info = "none",
           key.title = NA,
+          main = "Cell Type  Abundance Estimates",
           key.ylab = NULL,
           key.xlab = NULL,
           labCol  = FALSE,
@@ -146,9 +147,9 @@ heatmap.2(mergeCiberdata,
           #cexRow = NULL, cexCol = 1, srtCol = -5, offsetCol = 0.5,adjCol = c(0,1))
 
 # Note to self could not get legend to fit on heatmap so generate separately and screenshot
-# legend("bottom",legend = unique(tils_cat),col = unique(tilsVector2), lty= 1,             
-#           lwd = 5,           
-#           cex=.6)
+# legend("bottom",legend = unique(cell_cat),col = unique(cell_cat2), lty= 1,
+#           lwd = 5,
+#           cex=1.5)
 
 
 dev.off()

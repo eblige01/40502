@@ -134,8 +134,8 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 
 
 
-# Kendall's correlation Immune Decon 
-## Convert columns to numeric
+# Kendall's correlation Immune Decon
+# Convert columns to numeric
 # cont_tils <- as.numeric(as.character(trans_rna_seq_df$sTILs))
 # 
 # sig_cols <- setdiff(names(trans_rna_seq_df), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
@@ -173,96 +173,96 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 
 ### Module Analysis
 
-# signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
-# 
-# # Reformatting signature data for analysis
-# # Removing unnecessary rows and coloumns
-# resignature_data <- signature_data %>% dplyr ::select(-c("GID","CLID","GWEIGHT"))
-# resignature_data <- resignature_data %>% dplyr :: slice(-c(1,2))
-# 
-# # Transposing the dataframe
-# resignature_data <- t(resignature_data)
-# 
-# # Making first row colnames and making rownames a column
-# colnames(resignature_data) <- resignature_data[1,]
-# resignature_data <- resignature_data[-1,]
-# resignature_data <- as.data.frame(resignature_data)
-# resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
-# 
-# # Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
-# resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
-# 
-# # Reformatting and merging
-# resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
-# 
-# resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
-# 
-#  
-# ## Correlation
-# ## Convert columns to numeric
-# cont_tils <- as.numeric(as.character(resignature_data$sTILs))
-# 
-# sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
-# 
-# 
-# # Initialize lists for correlations and p-values
-# corrList <- list()
-# pValueList <- list()
-# 
-# # Convert continuous sTILs to numeric
-# cont_tils <- as.numeric(as.character(resignature_data$sTILs))
-# 
-# sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat", "sTILs"))
-# 
-# # Loop through each column and compute Kendall's correlation and p-value
-# for (type in sig_cols) {
-#   resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
-#   
-#   test_result <- cor.test(cont_tils, resignature_data[[type]], method = "kendall")
-#   
-#   corrList[[type]] <- test_result$estimate  # Kendall's Tau
-#   pValueList[[type]] <- test_result$p.value # p-value
-# }
-# 
-# # Convert to data frame
-# corr_df <- data.frame(
-#   Cell_Type = names(corrList),
-#   Kendalls_Correlation = unlist(corrList),
-#   P_Value = unlist(pValueList)
-# )
-# 
-# # Add significance stars (e.g., * p < 0.05, ** p < 0.01, *** p < 0.001)
-# corr_df <- corr_df %>%
-#   mutate(Significance = case_when(
-#     P_Value < 0.001 ~ "***",
-#     P_Value < 0.01  ~ "**",
-#     P_Value < 0.05  ~ "*",
-#     TRUE            ~ ""
-#   ))
-# 
-# 
-# 
-# # lollipop plot for top and bottom correlations
-# top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(20)
-# top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(20)
-# 
-# 
-# ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
-#   geom_segment(aes(xend = Cell_Type, y = 0, yend = Kendalls_Correlation), color = "steelblue", size = 1) +  # Lollipop stem
-#   geom_point(color = "red", size = 4) +  # Lollipop head
-#   coord_flip() +  # Flip for readability
-#   labs(x = "Signatures",
-#        y = "Kendall's Correlation") +
-#   theme_minimal() +
-#   theme(
-#     panel.grid = element_blank(),  # Removes all background grid lines
-#     axis.line.y = element_line(color = "black"),  # Keeps only the y-axis line
-#     axis.line.x = element_line(color = "black"), # Removes x-axis line if unnecessary
-#     plot.margin = margin(20, 30, 20, 30),
-#     plot.title = element_text(hjust = 2.5,size = rel(1.5),face = "bold")) +
-#   expand_limits(y = .5) +
-#   scale_y_continuous(expand = c(0, 0),) +
-#   ggtitle("Top 20 Correlated Signatures to TILs Percentage")
+signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+
+# Reformatting signature data for analysis
+# Removing unnecessary rows and coloumns
+resignature_data <- signature_data %>% dplyr ::select(-c("GID","CLID","GWEIGHT"))
+resignature_data <- resignature_data %>% dplyr :: slice(-c(1,2))
+
+# Transposing the dataframe
+resignature_data <- t(resignature_data)
+
+# Making first row colnames and making rownames a column
+colnames(resignature_data) <- resignature_data[1,]
+resignature_data <- resignature_data[-1,]
+resignature_data <- as.data.frame(resignature_data)
+resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
+
+# Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
+resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
+
+# Reformatting and merging
+resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
+
+resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
+
+
+## Correlation
+## Convert columns to numeric
+cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+
+sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
+
+
+# Initialize lists for correlations and p-values
+corrList <- list()
+pValueList <- list()
+
+# Convert continuous sTILs to numeric
+cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+
+sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat", "sTILs"))
+
+# Loop through each column and compute Kendall's correlation and p-value
+for (type in sig_cols) {
+  resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
+
+  test_result <- cor.test(cont_tils, resignature_data[[type]], method = "kendall")
+
+  corrList[[type]] <- test_result$estimate  # Kendall's Tau
+  pValueList[[type]] <- test_result$p.value # p-value
+}
+
+# Convert to data frame
+corr_df <- data.frame(
+  Cell_Type = names(corrList),
+  Kendalls_Correlation = unlist(corrList),
+  P_Value = unlist(pValueList)
+)
+
+# Add significance stars (e.g., * p < 0.05, ** p < 0.01, *** p < 0.001)
+corr_df <- corr_df %>%
+  mutate(Significance = case_when(
+    P_Value < 0.001 ~ "***",
+    P_Value < 0.01  ~ "**",
+    P_Value < 0.05  ~ "*",
+    TRUE            ~ ""
+  ))
+
+
+
+# lollipop plot for top and bottom correlations
+top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(20)
+top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(20)
+
+
+ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
+  geom_segment(aes(xend = Cell_Type, y = 0, yend = Kendalls_Correlation), color = "steelblue", size = 3) +  # Lollipop stem
+  geom_point(color = "red", size = 4) +  # Lollipop head
+  coord_flip() +  # Flip for readability
+  labs(x = "Signatures",
+       y = "Kendall's Correlation") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),  # Removes all background grid lines
+    axis.line.y = element_line(color = "black"),  # Keeps only the y-axis line
+    axis.line.x = element_line(color = "black"), # Removes x-axis line if unnecessary
+    plot.margin = margin(20, 30, 20, 30),
+    plot.title = element_text(hjust = 2.5,size = rel(1.5),face = "bold")) +
+  expand_limits(y = .5) +
+  scale_y_continuous(expand = c(0, 0),) +
+  ggtitle("Top 20 Correlated Signatures to TILs Percentage")
 # # Saving results
 #  write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
 

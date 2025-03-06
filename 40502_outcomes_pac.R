@@ -201,7 +201,7 @@ ggplot(res_df,aes(x = log2FoldChange, y = -log10(pvalue), col = diffexpressed, l
   geom_hline(yintercept = -log10(0.05), col = "gray", linetype = 'dashed') + 
   geom_point() + 
   scale_color_manual(values = c("blue","grey","red"),
-                     labels = c("Downregulated","Not significant","Upregulated")) +
+                     labels = c("Upregulated in Nonresponders","Not significant","Upregulated in Responders")) +
   coord_cartesian(ylim = c(0, 10), xlim = c(-5, 5)) + # since some genes can have minuslog10padj of inf, we set these limits
   labs( x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
   scale_x_continuous(breaks = seq(-5, 5, 2)) + # to customise the breaks in the x axis
