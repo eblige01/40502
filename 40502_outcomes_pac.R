@@ -6,9 +6,9 @@ library(ggplot2)
 library(writexl)
 # Loading data
 
-M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\40502_joined_metadata_fixed.csv", dec=",")
-D40502_data <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\NCTN-D3-recoded.csv", dec=",")
-rna_seq_df <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502\\Data\\rna_decon_matrix_40502.csv", dec=",")
+M40502_joined_metadata <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\40502_joined_metadata_fixed.csv", dec=",")
+D40502_data <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\NCTN-D3-recoded.csv", dec=",")
+rna_seq_df <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\rna_decon_matrix_40502.csv", dec=",")
 rownames(rna_seq_df) <- rna_seq_df[,1]
 rna_seq_df <- rna_seq_df[,-1]
 
@@ -143,7 +143,7 @@ ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University W
 # Removing Nas from RNA IDs
 pac_sub <- pac_sub %>% filter(!is.na(rna_decon_sampleid))
 ### Removing samples that do not have responder data
-ge_matrix <- ge_matrix %>% select(1,all_of(pac_sub$rna_decon_sampleid))
+ge_matrix <- ge_matrix %>% dplyr :: select(1,all_of(pac_sub$rna_decon_sampleid))
 ### Reformating count matrix
 row.names(ge_matrix) <- ge_matrix[,1]
 ge_matrix <- ge_matrix[,-1]
@@ -178,43 +178,42 @@ res_df$genes <- row.names(res_df)
 ### Saving results
 
 write_xlsx(res_df, "response_pac_DESeq2.xlsx")
-# Filter for significant genes (adjusted p-value < 0.05 and abs(log2FoldChange) > 1)
-sig_genes <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 1, ]
+# Adding direction column for res_df
+res_df$diffexpressed <- "NO"
+res_df$diffexpressed[res_df$log2FoldChange > 1 & res_df$pvalue < .05] <- "UP"
+res_df$diffexpressed[res_df$log2FoldChange < -1 & res_df$pvalue < .05] <- "DOWN"
 
-# Identify the top 15 significant genes by adjusted p-value (or use other criteria)
-top_genes <- head(sig_genes[order(sig_genes$padj), ], 15)
+# Subsetting differentially expressed genes
+diff_expr <- subset(res_df, res_df$diffexpressed != "NO")
 
-# Filter for significant upregulated genes
-sig_upregulated_genes <- sig_genes[sig_genes$log2FoldChange > 0, ]
+# Create a new column "delabel" to de, that will contain the name of the top 30 differentially expressed genes (NA in case they are not)
+top_genes<- res_df[abs(res_df$log2FoldChange) > 1, ]  # Filter genes with |Log2FC| > 1
+top_genes <- top_genes[order(top_genes$padj), ]  # Order by significance (padj)
+top_genes <- head(top_genes, 30)  # Select the top 30
 
-# Identify the top 15 significant upregulated genes by adjusted p-value
-top_upregulated_genes <- head(sig_upregulated_genes[order(sig_upregulated_genes$padj), ], 15)
+# Assign gene names for labeling, else NA
+res_df$delabel <- ifelse(res_df$genes %in% top_genes$genes, res_df$genes, NA)
 
 ### Making Volcano plot
-ggplot(res, aes(x=log2FoldChange, y=-log10(pvalue))) +
-  geom_point(aes(color=padj < 0.05), alpha=0.5) +  # Points for all genes
-  scale_color_manual(values = c("gray", "red")) +
-  theme_minimal() +
-  labs(title="Paclitaxel Response", x="Log2 Fold Change", y="-Log10(p-value)") +
-  theme(legend.position="none") +
-  geom_text(data=top_genes, aes(x=log2FoldChange, y=-log10(pvalue), label=rownames(top_genes)), size=2.5, vjust=-1, hjust=1)
 
-deg_genes <- rownames(sig_genes)
-sig_upregulated_list <- rownames(sig_upregulated_genes)
-# # GO enrichment
-# go_results <- enrichGO(gene = sig_upregulated_list,
-#                        OrgDb = org.Hs.eg.db,   
-#                        keyType = "SYMBOL",    
-#                        ont = "BP",            
-#                        pAdjustMethod = "bonferroni",  
-#                        qvalueCutoff = 0.05)  
-# # View the results
-# summary(go_results)
-# # Saving results
-# write_xlsx(as.data.frame(go_results), "sTILs_GO_results.xlsx")
-# 
-# # Plot the GO enrichment results
-# plot1 <- dotplot(go_results)  + theme(axis.text.y = element_text(angle = 0, hjust = 1))
-# plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplot(res_df,aes(x = log2FoldChange, y = -log10(pvalue), col = diffexpressed, label = delabel )) +
+  geom_vline(xintercept = c(-1, 1), col = "gray", linetype = 'dashed') +
+  geom_hline(yintercept = -log10(0.05), col = "gray", linetype = 'dashed') + 
+  geom_point() + 
+  scale_color_manual(values = c("blue","grey","red"),
+                     labels = c("Downregulated","Not significant","Upregulated")) +
+  coord_cartesian(ylim = c(0, 10), xlim = c(-5, 5)) + # since some genes can have minuslog10padj of inf, we set these limits
+  labs( x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
+  scale_x_continuous(breaks = seq(-5, 5, 2)) + # to customise the breaks in the x axis
+  geom_text_repel(max.overlaps = Inf, size = 3, force = 3 , color = "black") +
+  ggtitle('Paclitaxel Responders vs Nonresponders') +
+  theme(legend.title = element_blank(),
+        axis.title.y = element_text(face = "bold", margin = margin(0,20,0,0), size = rel(.7), color = 'black'),
+        axis.title.x = element_text(hjust = 0.5, face = "bold", margin = margin(20,0,0,0), size = rel(.7), color = 'black'),
+        plot.title = element_text(hjust = 0.5,size = rel(.9),face = "bold"))
 
+# Isolating gene names
+upreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "UP" ))$genes
+downreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "DOWN" ))$genes
+diff_express_genes <- diff_expr$genes
 

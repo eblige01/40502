@@ -173,97 +173,98 @@ trans_rna_seq_df <- trans_rna_seq_df %>% dplyr::select (-"rna_decon_sampleid")
 
 ### Module Analysis
 
-signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
-
-# Reformatting signature data for analysis
-# Removing unnecessary rows and coloumns
-resignature_data <- signature_data %>% select(-c("GID","CLID","GWEIGHT"))
-resignature_data <- resignature_data %>% dplyr :: slice(-c(1,2))
-
-# Transposing the dataframe
-resignature_data <- t(resignature_data)
-
-# Making first row colnames and making rownames a column
-colnames(resignature_data) <- resignature_data[1,]
-resignature_data <- resignature_data[-1,]
-resignature_data <- as.data.frame(resignature_data)
-resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
-
-# Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
-resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
-
-# Reformatting and merging
-resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
-
-resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
-
- 
-## Correlation
-## Convert columns to numeric
-cont_tils <- as.numeric(as.character(resignature_data$sTILs))
-
-sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
-
-
-# Initialize lists for correlations and p-values
-corrList <- list()
-pValueList <- list()
-
-# Convert continuous sTILs to numeric
-cont_tils <- as.numeric(as.character(resignature_data$sTILs))
-
-sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat", "sTILs"))
-
-# Loop through each column and compute Kendall's correlation and p-value
-for (type in sig_cols) {
-  resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
-  
-  test_result <- cor.test(cont_tils, resignature_data[[type]], method = "kendall")
-  
-  corrList[[type]] <- test_result$estimate  # Kendall's Tau
-  pValueList[[type]] <- test_result$p.value # p-value
-}
-
-# Convert to data frame
-corr_df <- data.frame(
-  Cell_Type = names(corrList),
-  Kendalls_Correlation = unlist(corrList),
-  P_Value = unlist(pValueList)
-)
-
-# Add significance stars (e.g., * p < 0.05, ** p < 0.01, *** p < 0.001)
-corr_df <- corr_df %>%
-  mutate(Significance = case_when(
-    P_Value < 0.001 ~ "***",
-    P_Value < 0.01  ~ "**",
-    P_Value < 0.05  ~ "*",
-    TRUE            ~ ""
-  ))
-
-
-
-# lollipop plot for top and bottom correlations
-top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(20)
-top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(20)
-
-
-ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
-  geom_segment(aes(xend = Cell_Type, y = 0, yend = Kendalls_Correlation), color = "steelblue", size = 1) +  # Lollipop stem
-  geom_point(color = "red", size = 4) +  # Lollipop head
-  coord_flip() +  # Flip for readability
-  labs(x = "Signatures",
-       y = "Kendall's Correlation") +
-  theme_minimal() +
-  theme(
-    panel.grid = element_blank(),  # Removes all background grid lines
-    axis.line.y = element_line(color = "black"),  # Keeps only the y-axis line
-    axis.line.x = element_line(color = "black"), # Removes x-axis line if unnecessary
-    plot.margin = margin(20, 30, 20, 30)
-  ) +
-  expand_limits(y = .5) +
-  scale_y_continuous(expand = c(0, 0),)
-# Saving results
- write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
+# signature_data <- read.table("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\cdt.txt", header = TRUE, sep = "\t", comment.char = "", quote = "")
+# 
+# # Reformatting signature data for analysis
+# # Removing unnecessary rows and coloumns
+# resignature_data <- signature_data %>% dplyr ::select(-c("GID","CLID","GWEIGHT"))
+# resignature_data <- resignature_data %>% dplyr :: slice(-c(1,2))
+# 
+# # Transposing the dataframe
+# resignature_data <- t(resignature_data)
+# 
+# # Making first row colnames and making rownames a column
+# colnames(resignature_data) <- resignature_data[1,]
+# resignature_data <- resignature_data[-1,]
+# resignature_data <- as.data.frame(resignature_data)
+# resignature_data$INVESTIGATOR_SAMPLENAME <- rownames(resignature_data)
+# 
+# # Moving INVESTIGATOR_SAMPLENAME for to the from for convenience
+# resignature_data <- resignature_data[, c("INVESTIGATOR_SAMPLENAME", setdiff(names(resignature_data), "INVESTIGATOR_SAMPLENAME"))]
+# 
+# # Reformatting and merging
+# resignature_data <- resignature_data %>% mutate(INVESTIGATOR_SAMPLENAME = sub("^X", "", INVESTIGATOR_SAMPLENAME))
+# 
+# resignature_data <- merge(resignature_data,uniqueData[, c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs")],by = "INVESTIGATOR_SAMPLENAME",all.y=TRUE)
+# 
+#  
+# ## Correlation
+# ## Convert columns to numeric
+# cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+# 
+# sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat","sTILs"))
+# 
+# 
+# # Initialize lists for correlations and p-values
+# corrList <- list()
+# pValueList <- list()
+# 
+# # Convert continuous sTILs to numeric
+# cont_tils <- as.numeric(as.character(resignature_data$sTILs))
+# 
+# sig_cols <- setdiff(names(resignature_data), c("INVESTIGATOR_SAMPLENAME", "sTILs_cat", "sTILs"))
+# 
+# # Loop through each column and compute Kendall's correlation and p-value
+# for (type in sig_cols) {
+#   resignature_data[[type]] <- as.numeric(as.character(resignature_data[[type]]))
+#   
+#   test_result <- cor.test(cont_tils, resignature_data[[type]], method = "kendall")
+#   
+#   corrList[[type]] <- test_result$estimate  # Kendall's Tau
+#   pValueList[[type]] <- test_result$p.value # p-value
+# }
+# 
+# # Convert to data frame
+# corr_df <- data.frame(
+#   Cell_Type = names(corrList),
+#   Kendalls_Correlation = unlist(corrList),
+#   P_Value = unlist(pValueList)
+# )
+# 
+# # Add significance stars (e.g., * p < 0.05, ** p < 0.01, *** p < 0.001)
+# corr_df <- corr_df %>%
+#   mutate(Significance = case_when(
+#     P_Value < 0.001 ~ "***",
+#     P_Value < 0.01  ~ "**",
+#     P_Value < 0.05  ~ "*",
+#     TRUE            ~ ""
+#   ))
+# 
+# 
+# 
+# # lollipop plot for top and bottom correlations
+# top_positive <- corr_df %>% arrange(desc(Kendalls_Correlation)) %>% head(20)
+# top_negative <-  corr_df %>% arrange(Kendalls_Correlation) %>% head(20)
+# 
+# 
+# ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kendalls_Correlation)) +
+#   geom_segment(aes(xend = Cell_Type, y = 0, yend = Kendalls_Correlation), color = "steelblue", size = 1) +  # Lollipop stem
+#   geom_point(color = "red", size = 4) +  # Lollipop head
+#   coord_flip() +  # Flip for readability
+#   labs(x = "Signatures",
+#        y = "Kendall's Correlation") +
+#   theme_minimal() +
+#   theme(
+#     panel.grid = element_blank(),  # Removes all background grid lines
+#     axis.line.y = element_line(color = "black"),  # Keeps only the y-axis line
+#     axis.line.x = element_line(color = "black"), # Removes x-axis line if unnecessary
+#     plot.margin = margin(20, 30, 20, 30),
+#     plot.title = element_text(hjust = 2.5,size = rel(1.5),face = "bold")) +
+#   expand_limits(y = .5) +
+#   scale_y_continuous(expand = c(0, 0),) +
+#   ggtitle("Top 20 Correlated Signatures to TILs Percentage")
+# # Saving results
+#  write_xlsx(corr_df, "kendalls_sTILs_module_results.xlsx")
 
 # # sTILs vs Modules
 # # Initialize an empty dataframe to store module_results
@@ -329,91 +330,92 @@ ggplot(top_positive, aes(x = reorder(Cell_Type, Kendalls_Correlation), y = Kenda
 #        x = "PAM50 Subtype",
 #        y = "Mean Expression ± SE") +
 #   theme_minimal()
-#DESEQ2 
 
-ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\ge_matrix_40502.csv")
+ #DESEQ2 
 
-### Removing samples that do not have sTILs data
-ge_matrix <- ge_matrix %>% select(1,all_of(uniqueData$rna_decon_sampleid))
-### Reformating count matrix
-row.names(ge_matrix) <- ge_matrix[,1]
-ge_matrix <- ge_matrix[,-1]
-
-ge_matrix <- round(ge_matrix)
-### Generating sample list for colData
-samples_list <- colnames(ge_matrix)
-
-
-### Metadata for DESeq2
-colData <- data.frame(
-  condition = uniqueData$sTILs_cat,
-  row.names = samples_list
-)
-
-### Constructing DESEq DataSet
-dds <- DESeqDataSetFromMatrix(countData = ge_matrix,
-                              colData = colData,
-                              design = ~ condition)
-dds <- DESeq(dds)
-### Making results table
-res <- results(dds, contrast = c("condition","High","Low"))
-
-resOrdered <- res[order(res$padj),]
-res_df <- as.data.frame(resOrdered)
-res_df$genes <- row.names(res_df)
-### Saving results
-# Adding direction column for res_df
-res_df$diffexpressed <- "NO"
-res_df$diffexpressed[res_df$log2FoldChange > 1 & res_df$pvalue < .001] <- "UP"
-res_df$diffexpressed[res_df$log2FoldChange < -1 & res_df$pvalue < .001] <- "DOWN"
-
-# Subsetting differentially expressed genes
-diff_expr <- subset(res_df, res_df$diffexpressed != "NO")
-write_xlsx(res_df, "sTILs_DESeq2.xlsx")
-# Create a new column "delabel" to de, that will contain the name of the top 30 differentially expressed genes (NA in case they are not)
-top_genes<- res_df[abs(res_df$log2FoldChange) > 1, ]  # Filter genes with |Log2FC| > 1
-top_genes <- top_genes[order(top_genes$padj), ]  # Order by significance (padj)
-top_genes <- head(top_genes, 30)  # Select the top 30
-
-# Assign gene names for labeling, else NA
-res_df$delabel <- ifelse(res_df$genes %in% top_genes$genes, res_df$genes, NA)
-
-### Making Volcano plot
-
-
-ggplot(res_df,aes(x = log2FoldChange, y = -log10(pvalue), col = diffexpressed, label = delabel )) +
-  geom_vline(xintercept = c(-1, 1), col = "gray", linetype = 'dashed') +
-  geom_hline(yintercept = -log10(0.001), col = "gray", linetype = 'dashed') + 
-  geom_point() + 
-  scale_color_manual(values = c("blue","grey","red"),
-                     labels = c("Downregulated","Not significant","Upregulated")) +
-  coord_cartesian(ylim = c(0, 30), xlim = c(-6, 6)) + # since some genes can have minuslog10padj of inf, we set these limits
-  labs( x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
-  scale_x_continuous(breaks = seq(-6, 6, 2)) + # to customise the breaks in the x axis
-  geom_text_repel(max.overlaps = Inf, size = 3, force = 3 , color = "black") +
-  ggtitle('TILS High(>=5%) vs Low(<5%)') +
-  theme(legend.title = element_blank(),
-        axis.title.y = element_text(face = "bold", margin = margin(0,20,0,0), size = rel(.7), color = 'black'),
-        axis.title.x = element_text(hjust = 0.5, face = "bold", margin = margin(20,0,0,0), size = rel(.7), color = 'black'),
-        plot.title = element_text(hjust = 0.5,size = rel(.9),face = "bold"))
-  
-# Isolating gene names
-upreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "UP" ))$genes
-downreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "DOWN" ))$genes
-go_results <- enrichGO(gene = upreg_genes,
-                       OrgDb = org.Hs.eg.db,   
-                       keyType = "SYMBOL",    
-                       ont = "BP",            
-                       pAdjustMethod = "BH",  
-                       qvalueCutoff = 0.05)  
-# View the results
-summary(go_results)
-# Saving results
-write_xlsx(as.data.frame(go_results), "sTILs_GO_upregulated_results.xlsx")
-
-# Plot the GO enrichment results
-dotplot(go_results,x= "count") +  
-            theme(axis.text.y = element_text(angle = 0, hjust = 1),
-            plot.title = element_text(hjust = 0.5,size = rel(2),face = "bold")) + 
-            ggtitle("Pathways of downregualated genes")
-plot2 <- barplot(go_results) + coord_flip() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# ge_matrix <- read.csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\ge_matrix_40502.csv")
+# 
+# ### Removing samples that do not have sTILs data
+# ge_matrix <- ge_matrix %>% dplyr :: select(1,all_of(uniqueData$rna_decon_sampleid))
+# ### Reformating count matrix
+# row.names(ge_matrix) <- ge_matrix[,1]
+# ge_matrix <- ge_matrix[,-1]
+# 
+# ge_matrix <- round(ge_matrix)
+# ### Generating sample list for colData
+# samples_list <- colnames(ge_matrix)
+# 
+# 
+# ### Metadata for DESeq2
+# colData <- data.frame(
+#   condition = uniqueData$sTILs_cat,
+#   row.names = samples_list
+# )
+# 
+# ### Constructing DESEq DataSet
+# dds <- DESeqDataSetFromMatrix(countData = ge_matrix,
+#                               colData = colData,
+#                               design = ~ condition)
+# dds <- DESeq(dds)
+# ### Making results table
+# res <- results(dds, contrast = c("condition","High","Low"))
+# 
+# resOrdered <- res[order(res$padj),]
+# res_df <- as.data.frame(resOrdered)
+# res_df$genes <- row.names(res_df)
+# 
+# # Adding direction column for res_df
+# res_df$diffexpressed <- "NO"
+# res_df$diffexpressed[res_df$log2FoldChange > 1 & res_df$pvalue < .001] <- "UP"
+# res_df$diffexpressed[res_df$log2FoldChange < -1 & res_df$pvalue < .001] <- "DOWN"
+# 
+# ### Saving results
+# write_xlsx(res_df, "sTILs_DESeq2.xlsx")
+# 
+# # Subsetting differentially expressed genes
+# diff_expr <- subset(res_df, res_df$diffexpressed != "NO")
+# 
+# # Create a new column "delabel" to de, that will contain the name of the top 30 differentially expressed genes (NA in case they are not)
+# top_genes<- res_df[abs(res_df$log2FoldChange) > 1, ]  # Filter genes with |Log2FC| > 1
+# top_genes <- top_genes[order(top_genes$padj), ]  # Order by significance (padj)
+# top_genes <- head(top_genes, 30)  # Select the top 30
+# 
+# # Assign gene names for labeling, else NA
+# res_df$delabel <- ifelse(res_df$genes %in% top_genes$genes, res_df$genes, NA)
+# 
+# ### Making Volcano plot
+# ggplot(res_df,aes(x = log2FoldChange, y = -log10(pvalue), col = diffexpressed, label = delabel )) +
+#   geom_vline(xintercept = c(-1, 1), col = "gray", linetype = 'dashed') +
+#   geom_hline(yintercept = -log10(0.001), col = "gray", linetype = 'dashed') + 
+#   geom_point() + 
+#   scale_color_manual(values = c("blue","grey","red"),
+#                      labels = c("Downregulated","Not significant","Upregulated")) +
+#   coord_cartesian(ylim = c(0, 30), xlim = c(-6, 6)) + # since some genes can have minuslog10padj of inf, we set these limits
+#   labs( x = expression("log"[2]*"FC"), y = expression("-log"[10]*"p-value")) + 
+#   scale_x_continuous(breaks = seq(-6, 6, 2)) + # to customise the breaks in the x axis
+#   geom_text_repel(max.overlaps = Inf, size = 3, force = 3 , color = "black") +
+#   ggtitle('TILS High(>=5%) vs Low(<5%)') +
+#   theme(legend.title = element_blank(),
+#         axis.title.y = element_text(face = "bold", margin = margin(0,20,0,0), size = rel(.7), color = 'black'),
+#         axis.title.x = element_text(hjust = 0.5, face = "bold", margin = margin(20,0,0,0), size = rel(.7), color = 'black'),
+#         plot.title = element_text(hjust = 0.5,size = rel(.9),face = "bold"))
+#   
+# # Isolating gene names
+# upreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "UP" ))$genes
+# downreg_genes <- (subset(diff_expr,diff_expr$diffexpressed == "DOWN" ))$genes
+# go_results <- enrichGO(gene = downreg_genes,
+#                        OrgDb = org.Hs.eg.db,   
+#                        keyType = "SYMBOL",    
+#                        ont = "BP",            
+#                        pAdjustMethod = "BH",  
+#                        qvalueCutoff = 0.05)  
+# # View the results
+# summary(go_results)
+# # Saving results
+# write_xlsx(as.data.frame(go_results), "sTILs_GO_upregulated_results.xlsx")
+# 
+# # Plot the GO enrichment results
+# dotplot(go_results,x= "count") +  
+#             theme(axis.text.y = element_text(angle = 0, hjust = 1),
+#             plot.title = element_text(hjust = 0.5,size = rel(2),face = "bold")) + 
+#             ggtitle("Pathways of Downregulated Genes")
