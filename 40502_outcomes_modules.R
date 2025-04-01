@@ -1,7 +1,5 @@
 library("tidyverse")
-library("broom")
-library("biglm") 
-library("pbapply")
+
 
 # 40502 Outcome modules
 M40502_joined_metadata <- read_csv("C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\40502_data\\Data\\40502_joined_metadata_fixed.csv")
@@ -33,5 +31,7 @@ match(D40502_data$patid,M40502_joined_metadata$patid)
 
 # Use mutate to create bestrep in M4 so we dont lose data due to duplicate paitent IDS
 
-
+M40502_joined_metadata <- M40502_joined_metadata %>%
+  left_join(D40502_data, by = "patid")
+          
 
