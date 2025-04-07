@@ -14,11 +14,11 @@ signature_data <- read_table("C:\\Users\\blig02\\OneDrive - The Ohio State Unive
 
 
 # Creating Bc class subsets
-hr_subset <- D40502_data |> 
-  filter(patid %in% M40502_joined_metadata$patid & bc_class == "HR" )
+tnbc_subset <- D40502_data |> 
+  filter(patid %in% M40502_joined_metadata$patid & bc_class == "TNBC" )
 
-hr_metadata <- M40502_joined_metadata |> 
-  left_join(hr_subset, by = "patid") |> 
+tnbc_metadata <- M40502_joined_metadata |> 
+  left_join(tnbc_subset, by = "patid") |> 
   relocate(bestresp, .after = rna_decon_sampleid ) |> 
   select(patid:bestresp) |> 
   filter(!(is.na(bestresp)) & !(is.na(INVESTIGATOR_SAMPLENAME)))
@@ -33,13 +33,13 @@ tidy_signature_data <- signature_data |>
 colnames(tidy_signature_data) <- str_remove(colnames(tidy_signature_data),"^X")
 
 # Removing columns not found in metadata
-tidy_signature_data <- select(tidy_signature_data,any_of(hr_metadata$INVESTIGATOR_SAMPLENAME))
+tidy_signature_data <- select(tidy_signature_data,any_of(tnbc_metadata$INVESTIGATOR_SAMPLENAME))
 
 
 
 transposed_signature_data <- as_tibble(t(tidy_signature_data),rownames = NA) |> 
   rownames_to_column("INVESTIGATOR_SAMPLENAME") |> 
-  left_join(hr_metadata |> select(INVESTIGATOR_SAMPLENAME,patid), by ="INVESTIGATOR_SAMPLENAME") |> 
+  left_join(tnbc_metadata |> select(INVESTIGATOR_SAMPLENAME,patid), by ="INVESTIGATOR_SAMPLENAME") |> 
   relocate(patid,.before=1) |> 
   select(-INVESTIGATOR_SAMPLENAME)
 
@@ -49,7 +49,7 @@ named_transposed_signature_data <- as_tibble(t(tidy_signature_data),rownames = N
 # OR calculation ----------------------------------------------------------
 
 OR_signature_data <-  named_transposed_signature_data |> 
-  mutate(bestresp = hr_metadata$bestresp[match(rownames(named_transposed_signature_data),hr_metadata$INVESTIGATOR_SAMPLENAME)],.before = 1) |> 
+  mutate(bestresp = tnbc_metadata$bestresp[match(rownames(named_transposed_signature_data),tnbc_metadata$INVESTIGATOR_SAMPLENAME)],.before = 1) |> 
   mutate(bestresp = ifelse(bestresp <= 2,1,0))
 
 gene_signatures <- colnames(OR_signature_data |> select(-c(bestresp)))
@@ -77,11 +77,11 @@ logistic_results$or_P_value <- predict(logistic_results,log10 = FALSE)
 logistic_results$Gene <- colnames(OR_matrix)
 logistic_results$log2_OR <- log2(logistic_results$OR)
 
-write_xlsx(logistic_results,"C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\Documents\\Research\\40502_rotation_project\\Results\\Outcomes\\LogReg_HR+-_modules.xlsx")
+write_xlsx(logistic_results,"C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\Documents\\Research\\40502_rotation_project\\Results\\Outcomes\\LogReg_TNBC_modules.xlsx")
 
 # HR calculations ---------------------------------------------------------
 
-hr_signature_data <- left_join(transposed_signature_data,hr_subset |> select(patid,pfsmos,pfsstat),by = "patid") |> 
+hr_signature_data <- left_join(transposed_signature_data,tnbc_subset |> select(patid,pfsmos,pfsstat),by = "patid") |> 
   relocate(c(pfsmos,pfsstat),.before = 1)
 # Making character vectors numeric
 hr_signature_data <- hr_signature_data %>%
@@ -101,7 +101,7 @@ get_HR <- function(gene) {
 # Apply function to all gene signatures
 cox_results <- do.call(rbind, pblapply(gene_signatures, get_HR))
 
-write_xlsx(cox_results,"C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\Documents\\Research\\40502_rotation_project\\Results\\Outcomes\\Cox_HR+-_modules.xlsx")
+write_xlsx(cox_results,"C:\\Users\\blig02\\OneDrive - The Ohio State University Wexner Medical Center\\Documents\\Research\\40502_rotation_project\\Results\\Outcomes\\Cox_TNBC_modules.xlsx")
 
 
 # Visualization -----------------------------------------------------------
@@ -140,7 +140,7 @@ genome_scatter <- ggplot(merged_results,aes(log2_OR,log2_HR,color = sig_stat)) +
   scale_color_manual(
     values = c("0"="gray70","1"="#E41A1C","2" = "#377EB8","3"= "#4DAF4A"), 
     name = "Significant features (P < .05)",
-    labels = c("0"="NS, 525 features","1"="PFS only, 424 features","2" = "Response only,62 features","3"= "PFS and Response, 10 features")) +
+    labels = c("0"="NS, 980 features","1"="PFS only, 36 features","2" = "Response only,4 features","3"= "PFS and Response, 1 features")) +
   labs(x = "Response(CR or PR) Log2 OR", y = "PFS Log2 HR") +
   geom_text_repel(
     data = combined_genes,
@@ -154,3 +154,4 @@ genome_scatter <- ggplot(merged_results,aes(log2_OR,log2_HR,color = sig_stat)) +
   ) +
   theme_classic()
 table(merged_results$sig_stat)
+
